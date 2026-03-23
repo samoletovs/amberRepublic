@@ -3,6 +3,7 @@ import { economyEvents } from './economy-events';
 import { securityEvents } from './security-events';
 import { societyEvents } from './society-events';
 import { diplomacyEvents, scienceEvents, crisisEvents } from './diplomacy-science-events';
+import { extraEvents } from './extra-events';
 
 export const ALL_EVENTS: GameEvent[] = [
   ...economyEvents,
@@ -11,4 +12,5 @@ export const ALL_EVENTS: GameEvent[] = [
   ...diplomacyEvents,
   ...scienceEvents,
   ...crisisEvents,
+  ...extraEvents,
 ];

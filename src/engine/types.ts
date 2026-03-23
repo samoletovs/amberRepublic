@@ -1,3 +1,5 @@
+import type { Parliament, InternationalRatings } from './politics';
+
 // ─── Core Game Types ─────────────────────────────────────────────
 export interface GameState {
   turn: number;
@@ -11,6 +13,9 @@ export interface GameState {
   score: number;
   seed: number;
   firedOneTimeEvents: Set<string>;
+  parliament: Parliament;
+  ratings: InternationalRatings;
+  electionPending?: boolean;
 }
 
 export interface ScheduledEffect {

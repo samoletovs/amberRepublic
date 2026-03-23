@@ -37,39 +37,39 @@ export default function GameOverScreen({ state, onRestart }: Props) {
           <div className="text-6xl mb-4">{grade.emoji}</div>
           
           <div className="inline-block px-6 py-2 rounded-xl mb-4" style={{
-            background: 'linear-gradient(135deg, #D4A843, #8B6914)',
+            background: '#9E3039',
           }}>
-            <span className="text-4xl font-black text-slate-900">{grade.grade}</span>
+            <span className="text-4xl font-black text-white">{grade.grade}</span>
           </div>
 
-          <h1 className="text-3xl font-bold text-slate-100 mb-2">{grade.title}</h1>
-          <p className="text-slate-400 mb-4">{grade.description}</p>
+          <h1 className="text-3xl font-bold mb-2" style={{ color: '#1C1917' }}>{grade.title}</h1>
+          <p className="mb-4" style={{ color: '#78716C' }}>{grade.description}</p>
           
           {state.gameOverReason && (
-            <div className="glass-card p-4 text-left mb-6 border border-amber-gold/20">
-              <p className="text-sm text-slate-300 italic leading-relaxed">{state.gameOverReason}</p>
+            <div className="glass-card p-4 text-left mb-6" style={{ borderColor: 'rgba(158,48,57,0.15)' }}>
+              <p className="text-sm italic leading-relaxed" style={{ color: '#3D3731' }}>{state.gameOverReason}</p>
             </div>
           )}
 
           <div className="grid grid-cols-3 gap-2 sm:gap-4 mb-6">
             <div className="glass-card p-2 sm:p-3">
-              <div className="text-xl sm:text-2xl font-bold text-amber-gold">{state.score}</div>
-              <div className="text-[10px] sm:text-xs text-slate-500">Final Score</div>
+              <div className="font-data text-xl sm:text-2xl font-bold" style={{ color: '#B8860B' }}>{state.score}</div>
+              <div className="text-[10px] sm:text-xs" style={{ color: '#78716C' }}>Final Score</div>
             </div>
             <div className="glass-card p-2 sm:p-3">
-              <div className="text-xl sm:text-2xl font-bold text-slate-200">{state.turn}</div>
-              <div className="text-[10px] sm:text-xs text-slate-500">Turns Played</div>
+              <div className="font-data text-xl sm:text-2xl font-bold" style={{ color: '#1C1917' }}>{state.turn}</div>
+              <div className="text-[10px] sm:text-xs" style={{ color: '#78716C' }}>Turns Played</div>
             </div>
             <div className="glass-card p-2 sm:p-3">
-              <div className="text-xl sm:text-2xl font-bold text-slate-200">{state.indicators.population.toFixed(2)}M</div>
-              <div className="text-[10px] sm:text-xs text-slate-500">Final Pop</div>
+              <div className="font-data text-xl sm:text-2xl font-bold" style={{ color: '#1C1917' }}>{state.indicators.population.toFixed(2)}M</div>
+              <div className="text-[10px] sm:text-xs" style={{ color: '#78716C' }}>Final Pop</div>
             </div>
           </div>
         </div>
 
         {/* Key changes */}
         <div className="glass-card p-6 mb-6">
-          <h3 className="text-sm font-semibold text-amber-gold uppercase tracking-wider mb-4">
+          <h3 className="text-sm font-semibold uppercase tracking-wider mb-4" style={{ color: '#9E3039' }}>
             📊 Your Legacy — Key Changes
           </h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
@@ -80,10 +80,10 @@ export default function GameOverScreen({ state, onRestart }: Props) {
                              (meta.goodDirection === 'down' && c.diff < 0);
               const isNeutral = meta.goodDirection === 'neutral';
               return (
-                <div key={c.key} className="flex items-center justify-between text-sm p-2 rounded-lg bg-slate-800/50">
-                  <span className="text-slate-400 truncate">{c.emoji} {c.name}</span>
-                  <span className={`font-mono font-semibold ${
-                    isNeutral ? 'text-blue-400' : isGood ? 'text-green-400' : 'text-red-400'
+                <div key={c.key} className="flex items-center justify-between text-sm p-2 rounded-lg" style={{ background: 'rgba(28,25,23,0.03)' }}>
+                  <span className="truncate" style={{ color: '#78716C' }}>{c.emoji} {c.name}</span>
+                  <span className={`font-data font-semibold ${
+                    isNeutral ? 'text-blue-500' : isGood ? 'text-green-600' : 'text-red-500'
                   }`}>
                     {c.diff > 0 ? '+' : ''}{c.diff.toFixed(1)}
                   </span>
@@ -95,10 +95,10 @@ export default function GameOverScreen({ state, onRestart }: Props) {
 
         {/* Fun epilogue */}
         <div className="glass-card p-6 mb-6">
-          <h3 className="text-sm font-semibold text-amber-gold uppercase tracking-wider mb-3">
+          <h3 className="text-sm font-semibold uppercase tracking-wider mb-3" style={{ color: '#9E3039' }}>
             📰 The Headlines
           </h3>
-          <div className="space-y-2 text-sm text-slate-300">
+          <div className="space-y-2 text-sm" style={{ color: '#3D3731' }}>
             {state.indicators.population > 1.9 && <p>📰 <i>"Latvia Defies Demographic Doom — Population Actually Growing!"</i></p>}
             {state.indicators.population < 1.5 && <p>📰 <i>"Latvia's Last Citizen: 'Someone Has to Turn Off the Lights'"</i></p>}
             {state.indicators.techSector > 70 && <p>📰 <i>"Silicon Baltic: How Latvia Became Europe's Startup Capital"</i></p>}
@@ -118,23 +118,20 @@ export default function GameOverScreen({ state, onRestart }: Props) {
           <div className="flex flex-col sm:flex-row gap-3 justify-center items-center mb-4">
             <button
               onClick={onRestart}
-              className="w-full sm:w-auto px-8 py-3 rounded-xl font-semibold text-lg transition-all duration-300 pulse-amber"
-              style={{
-                background: 'linear-gradient(135deg, #D4A843, #8B6914)',
-                color: '#0f172a',
-              }}
+              className="w-full sm:w-auto px-8 py-3 rounded-lg font-semibold text-lg transition-all duration-200 pulse-amber"
+              style={{ background: '#9E3039', color: '#FFFFFF' }}
             >
               🔄 Try Again — Latvia Needs You
             </button>
             <FeedbackButton />
           </div>
 
-          <p className="text-xs text-slate-500 mt-4">
+          <p className="text-xs mt-4" style={{ color: '#A8A29E' }}>
             Every game is different. Can you find a path to the S rank?
           </p>
 
-          <div className="mt-8 text-xs text-slate-600 max-w-md mx-auto leading-relaxed">
-            <p className="mb-2 font-semibold text-slate-500">🎯 What This Game Teaches</p>
+          <div className="mt-8 text-xs max-w-md mx-auto leading-relaxed" style={{ color: '#78716C' }}>
+            <p className="mb-2 font-semibold" style={{ color: '#3D3731' }}>🎯 What This Game Teaches</p>
             <p>Real governance is about trade-offs. There are no perfect choices — only trade-offs 
             between competing goods. The effects of your decisions take quarters or years to manifest. 
             Today's popular choice might be tomorrow's crisis. Latvia's challenges are real: 

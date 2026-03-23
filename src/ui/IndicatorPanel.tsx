@@ -19,7 +19,7 @@ export default function IndicatorPanel({ state }: Props) {
 
   return (
     <div className="glass-card p-4 space-y-4 max-h-[calc(100vh-100px)] overflow-y-auto">
-      <h3 className="text-sm font-semibold text-amber-gold uppercase tracking-wider">
+      <h3 className="text-sm font-semibold uppercase tracking-wider" style={{ color: '#9E3039' }}>
         📊 State of the Republic
       </h3>
 
@@ -60,10 +60,10 @@ export default function IndicatorPanel({ state }: Props) {
                 return (
                   <div key={ind.key} className="group" title={ind.description}>
                     <div className="flex items-center justify-between text-xs mb-0.5">
-                      <span className="truncate" style={{ color: '#7a7468' }}>
+                      <span className="truncate" style={{ color: '#78716C' }}>
                         {ind.emoji} {ind.name}
                       </span>
-                      <span className="flex items-center gap-1 font-data text-xs" style={{ color: '#b0a890' }}>
+                      <span className="flex items-center gap-1 font-data text-xs" style={{ color: '#3D3731' }}>
                         {formatVal()}
                         {Math.abs(diff) > 0.05 && (
                           <span className={`text-[10px] ${diff > 0 

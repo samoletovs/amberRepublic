@@ -2,6 +2,7 @@ import { GameState, GameEvent, TurnRecord } from './types';
 import { applyEffect, processScheduledEffects, applyCascadingEffects, checkGameOver, calculateScore } from './effects';
 import { selectEvents, generateNarrative } from './events';
 import { createRng } from './random';
+import { updatePartyApprovals, updateCoalitionLoyalty, runElection, calculateRatings, getCoalitionSeats } from './politics';
 
 export interface TurnResult {
   state: GameState;
@@ -77,7 +78,27 @@ export function resolveTurn(
     score: calculateScore(newState),
   };
 
-  // 7. Check game over
+  // 7. Update parliament (approvals, loyalty)
+  const rng2 = createRng(state.seed + newState.turn * 7919 + 2);
+  newState.parliament = updatePartyApprovals(newState.parliament, newState.indicators, rng2);
+  newState.parliament = updateCoalitionLoyalty(newState.parliament, newState.indicators, rng2);
+
+  // 8. Check for election
+  if (newState.turn >= newState.parliament.nextElectionTurn) {
+    const elRng = createRng(state.seed + newState.turn * 13337);
+    const { parliament: newParl, result } = runElection(newState.parliament, newState.indicators, newState.turn, newState.year, elRng);
+    newState.parliament = newParl;
+    newState.electionPending = true;
+    if (!result.won) {
+      newState.gameOver = true;
+      newState.gameOverReason = `Election defeat! Your coalition won only ${getCoalitionSeats(newParl)} seats — not enough to govern. The opposition forms a new government. Your time as leader is over.`;
+    }
+  }
+
+  // 9. Update international ratings
+  newState.ratings = calculateRatings(newState.indicators);
+
+  // 10. Check game over
   newState = checkGameOver(newState);
 
   return newState;

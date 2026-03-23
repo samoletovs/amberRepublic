@@ -38,13 +38,13 @@ export default function EventCard({ event, index, selectedChoice, onChoose }: Pr
               <span className="text-[10px] text-slate-500 uppercase tracking-wider">One-time</span>
             )}
           </div>
-          <h3 className="text-lg font-bold text-slate-100">{event.title}</h3>
+          <h3 className="text-lg font-bold" style={{ color: '#1C1917' }}>{event.title}</h3>
         </div>
       </div>
       
-      <p className="text-sm text-slate-300 leading-relaxed mb-1">{event.description}</p>
+      <p className="text-sm leading-relaxed mb-1" style={{ color: '#3D3731' }}>{event.description}</p>
       {event.flavor && (
-        <p className="text-xs text-slate-500 italic mb-4">{event.flavor}</p>
+        <p className="text-xs italic mb-4" style={{ color: '#78716C' }}>{event.flavor}</p>
       )}
 
       {/* Choices */}
@@ -56,17 +56,18 @@ export default function EventCard({ event, index, selectedChoice, onChoose }: Pr
             <div
               key={ci}
               onClick={() => onChoose(ci)}
-              className={`choice-card p-4 ${isSelected ? 'ring-2 ring-amber-gold/60 bg-amber-gold/10' : ''}`}
+              className={`choice-card p-4 ${isSelected ? 'ring-2 ring-amber/40' : ''}`}
+              style={isSelected ? { background: 'rgba(184,134,11,0.06)' } : undefined}
             >
               <div className="flex items-start gap-3">
                 <div className={`w-6 h-6 rounded-full border-2 shrink-0 flex items-center justify-center mt-0.5 transition-all ${
-                  isSelected ? 'border-amber-gold bg-amber-gold' : 'border-slate-500'
+                  isSelected ? 'border-amber bg-amber' : 'border-stone-300'
                 }`}>
-                  {isSelected && <span className="text-slate-900 text-xs font-bold">✓</span>}
+                  {isSelected && <span className="text-white text-xs font-bold">✓</span>}
                 </div>
                 <div className="flex-1">
-                  <h4 className="font-semibold text-sm text-slate-200 mb-1">{choice.label}</h4>
-                  <p className="text-xs text-slate-400 leading-relaxed mb-2">{choice.description}</p>
+                  <h4 className="font-semibold text-sm mb-1" style={{ color: '#1C1917' }}>{choice.label}</h4>
+                  <p className="text-xs leading-relaxed mb-2" style={{ color: '#78716C' }}>{choice.description}</p>
                   
                   {/* Effect preview */}
                   <div className="flex flex-wrap gap-1.5">
@@ -80,8 +81,8 @@ export default function EventCard({ event, index, selectedChoice, onChoose }: Pr
                         <span 
                           key={ei} 
                           className={`text-[10px] px-1.5 py-0.5 rounded ${
-                            isNeutral ? 'bg-blue-500/15 text-blue-400' :
-                            isPositive ? 'bg-green-500/15 text-green-400' : 'bg-red-500/15 text-red-400'
+                            isNeutral ? 'bg-blue-500/10 text-blue-600' :
+                            isPositive ? 'bg-green-500/10 text-green-700' : 'bg-red-500/10 text-red-600'
                           }`}
                           title={`${meta.name}: ${eff.delta > 0 ? '+' : ''}${eff.delta}${eff.delay > 0 ? ` (in ${eff.delay} turns)` : ''}`}
                         >
@@ -97,7 +98,7 @@ export default function EventCard({ event, index, selectedChoice, onChoose }: Pr
 
                   {/* Humor */}
                   {isSelected && choice.humor && (
-                    <p className="text-xs text-amber-gold/70 italic mt-2 border-l-2 border-amber-gold/30 pl-2">
+                    <p className="text-xs italic mt-2 border-l-2 pl-2" style={{ color: '#B8860B', borderColor: 'rgba(184,134,11,0.3)' }}>
                       {choice.humor}
                     </p>
                   )}

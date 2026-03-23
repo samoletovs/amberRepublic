@@ -1,5 +1,6 @@
 import { GameState } from './types';
 import { INDICATORS } from './indicators';
+import { createInitialParliament, calculateRatings } from './politics';
 
 /** Latvia 2025 baseline starting state */
 export function createInitialState(seed?: number): GameState {
@@ -65,5 +66,7 @@ export function createInitialState(seed?: number): GameState {
     score: 0,
     seed: s,
     firedOneTimeEvents: new Set(),
+    parliament: createInitialParliament(),
+    ratings: calculateRatings(indicators),
   };
 }

@@ -40,9 +40,9 @@ export default function FeedbackButton() {
         onClick={() => setOpen(true)}
         className="shrink-0 w-10 h-10 sm:w-auto sm:h-auto sm:px-4 sm:py-3 rounded-xl text-sm font-medium transition-all duration-200 flex items-center justify-center gap-1.5"
         style={{
-          background: 'rgba(148, 163, 184, 0.15)',
-          color: '#94a3b8',
-          border: '1px solid rgba(148, 163, 184, 0.2)',
+          background: 'rgba(28, 25, 23, 0.05)',
+          color: '#78716C',
+          border: '1px solid rgba(28, 25, 23, 0.1)',
         }}
       >
         <span>💬</span>
@@ -52,7 +52,7 @@ export default function FeedbackButton() {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-sm" onClick={() => setOpen(false)}>
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4" style={{ background: 'rgba(28,25,23,0.3)' }} onClick={() => setOpen(false)}>
       <div 
         className="glass-card w-full sm:max-w-md p-5 sm:p-6 fade-in rounded-t-2xl sm:rounded-2xl"
         onClick={e => e.stopPropagation()}
@@ -64,8 +64,8 @@ export default function FeedbackButton() {
           </div>
         ) : (
           <>
-            <h3 className="text-lg font-bold text-slate-100 mb-1">💬 Send Feedback</h3>
-            <p className="text-xs text-slate-500 mb-4">Creates a GitHub issue for the dev team.</p>
+            <h3 className="text-lg font-bold mb-1" style={{ color: '#1C1917' }}>💬 Send Feedback</h3>
+            <p className="text-xs mb-4" style={{ color: '#78716C' }}>Creates a GitHub issue for the dev team.</p>
 
             {/* Type selector */}
             <div className="flex gap-2 mb-4">
@@ -75,9 +75,10 @@ export default function FeedbackButton() {
                   onClick={() => setType(k)}
                   className={`flex-1 py-2 px-3 rounded-lg text-xs font-medium transition-all ${
                     type === k 
-                      ? 'bg-amber-gold/20 text-amber-gold border border-amber-gold/40' 
-                      : 'bg-slate-800/50 text-slate-400 border border-transparent'
+                      ? 'text-white' 
+                      : 'text-stone-500 border border-transparent'
                   }`}
+                  style={type === k ? { background: '#9E3039' } : { background: 'rgba(28,25,23,0.04)' }}
                 >
                   {typeLabels[k].emoji} {typeLabels[k].label}
                 </button>
@@ -89,13 +90,14 @@ export default function FeedbackButton() {
               value={text}
               onChange={e => setText(e.target.value)}
               placeholder="Describe what you found, what you'd like, or what feels unbalanced..."
-              className="w-full h-28 bg-slate-800/60 border border-slate-600/30 rounded-xl p-3 text-sm text-slate-200 placeholder-slate-500 resize-none focus:outline-none focus:border-amber-gold/40 transition-colors"
+              className="w-full h-28 border rounded-xl p-3 text-sm placeholder-stone-400 resize-none focus:outline-none focus:border-amber/40 transition-colors"
+              style={{ background: 'rgba(28,25,23,0.03)', borderColor: 'rgba(28,25,23,0.1)', color: '#1C1917' }}
             />
 
             <div className="flex gap-3 mt-4">
               <button
                 onClick={() => setOpen(false)}
-                className="flex-1 py-2.5 rounded-xl text-sm font-medium text-slate-400 bg-slate-800/50 border border-slate-600/20"
+                className="flex-1 py-2.5 rounded-xl text-sm font-medium" style={{ color: '#78716C', background: 'rgba(28,25,23,0.04)', border: '1px solid rgba(28,25,23,0.08)' }}
               >
                 Cancel
               </button>
@@ -104,11 +106,12 @@ export default function FeedbackButton() {
                 disabled={!text.trim()}
                 className={`flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all ${
                   text.trim()
-                    ? 'text-slate-900 cursor-pointer'
-                    : 'text-slate-500 opacity-40 cursor-not-allowed'
+                    ? 'text-white cursor-pointer'
+                    : 'opacity-40 cursor-not-allowed'
                 }`}
                 style={{
-                  background: text.trim() ? 'linear-gradient(135deg, #D4A843, #8B6914)' : 'rgba(148,163,184,0.15)',
+                  background: text.trim() ? '#9E3039' : 'rgba(28,25,23,0.06)',
+                  color: text.trim() ? '#FFFFFF' : '#78716C',
                 }}
               >
                 Open Issue on GitHub
