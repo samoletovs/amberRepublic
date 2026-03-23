@@ -60,10 +60,10 @@ export default function IndicatorPanel({ state }: Props) {
                 return (
                   <div key={ind.key} className="group" title={ind.description}>
                     <div className="flex items-center justify-between text-xs mb-0.5">
-                      <span className="text-slate-400 truncate">
+                      <span className="truncate" style={{ color: '#7a7468' }}>
                         {ind.emoji} {ind.name}
                       </span>
-                      <span className="flex items-center gap-1 text-slate-300 font-mono">
+                      <span className="flex items-center gap-1 font-data text-xs" style={{ color: '#b0a890' }}>
                         {formatVal()}
                         {Math.abs(diff) > 0.05 && (
                           <span className={`text-[10px] ${diff > 0 
