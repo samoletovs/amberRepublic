@@ -4,6 +4,8 @@ import { INDICATORS, getIndicatorMeta } from '../engine/indicators';
 import IndicatorPanel from './IndicatorPanel';
 import EventCard from './EventCard';
 import FeedbackButton from './FeedbackButton';
+import RatingsBar from './RatingsBar';
+import CoalitionBar from './CoalitionBar';
 
 interface Props {
   state: GameState;
@@ -28,31 +30,31 @@ export default function GameScreen({ state, events, decisions, onMakeChoice, onE
           <div className="flex items-center gap-2 sm:gap-3 min-w-0">
             <span className="text-xl sm:text-2xl">🏛️</span>
             <div className="min-w-0">
-              <h1 className="text-sm sm:text-lg font-bold truncate" style={{ color: '#D4A843' }}>Amber Republic</h1>
-              <p className="text-[10px] sm:text-xs text-slate-400">
+              <h1 className="text-sm sm:text-lg font-bold truncate" style={{ color: '#9E3039' }}>Amber Republic</h1>
+              <p className="text-[10px] sm:text-xs" style={{ color: '#78716C' }}>
                 {QUARTER_NAMES[state.quarter - 1]} {state.year} • Turn {state.turn + 1}/40
               </p>
             </div>
           </div>
           <div className="flex items-center gap-2 sm:gap-4 text-sm shrink-0">
             <div className="text-center">
-              <div className="text-amber-gold font-bold text-sm sm:text-lg">{state.score}</div>
-              <div className="text-[9px] sm:text-xs text-slate-500">Score</div>
+              <div className="font-data font-bold text-sm sm:text-lg" style={{ color: '#B8860B' }}>{state.score}</div>
+              <div className="text-[9px] sm:text-xs" style={{ color: '#78716C' }}>Score</div>
             </div>
             <div className="text-center hidden xs:block">
-              <div className="text-slate-200 font-bold text-sm sm:text-lg">{state.indicators.population.toFixed(2)}M</div>
-              <div className="text-[9px] sm:text-xs text-slate-500">Pop</div>
+              <div className="font-data font-bold text-sm sm:text-lg" style={{ color: '#1C1917' }}>{state.indicators.population.toFixed(2)}M</div>
+              <div className="text-[9px] sm:text-xs" style={{ color: '#78716C' }}>Pop</div>
             </div>
             <div className="text-center hidden sm:block">
-              <div className="text-slate-200 font-bold text-lg">€{state.indicators.gdp.toFixed(1)}B</div>
-              <div className="text-xs text-slate-500">GDP</div>
+              <div className="font-data font-bold text-lg" style={{ color: '#1C1917' }}>€{state.indicators.gdp.toFixed(1)}B</div>
+              <div className="text-xs" style={{ color: '#78716C' }}>GDP</div>
             </div>
-            <div className="w-16 sm:w-32 h-1.5 sm:h-2 bg-slate-700 rounded-full overflow-hidden" title="Turns remaining">
+            <div className="w-16 sm:w-32 h-1.5 sm:h-2 rounded-full overflow-hidden" style={{ background: 'rgba(28,25,23,0.08)' }} title="Turns remaining">
               <div 
                 className="h-full rounded-full transition-all duration-500"
                 style={{ 
                   width: `${((40 - state.turn) / 40) * 100}%`,
-                  background: state.turn > 30 ? '#ef4444' : 'linear-gradient(90deg, #D4A843, #8B6914)',
+                  background: state.turn > 30 ? '#DC2626' : '#9E3039',
                 }}
               />
             </div>
@@ -65,8 +67,8 @@ export default function GameScreen({ state, events, decisions, onMakeChoice, onE
         onClick={() => setShowIndicators(!showIndicators)}
         className="lg:hidden glass-card px-4 py-2 mb-3 w-full text-left flex items-center justify-between text-sm"
       >
-        <span className="text-slate-300">📊 State of the Republic</span>
-        <span className="text-slate-500 text-xs">{showIndicators ? '▲ Hide' : '▼ Show'}</span>
+        <span style={{ color: '#3D3731' }}>📊 State of the Republic</span>
+        <span className="text-xs" style={{ color: '#78716C' }}>{showIndicators ? '▲ Hide' : '▼ Show'}</span>
       </button>
 
       <div className="flex flex-col lg:flex-row gap-3 sm:gap-4">
@@ -76,12 +78,16 @@ export default function GameScreen({ state, events, decisions, onMakeChoice, onE
         </aside>
 
         {/* Center: Events & Decisions */}
-        <main className="flex-1 space-y-4">
+        <main className="flex-1 space-y-3">
+          {/* Coalition & Ratings */}
+          <CoalitionBar parliament={state.parliament} />
+          <RatingsBar ratings={state.ratings} />
+
           {/* Previous turn narrative */}
           {lastRecord && (
             <div className="glass-card p-4 fade-in">
-              <h3 className="text-sm font-semibold text-amber-gold mb-2 uppercase tracking-wider">📜 Last Quarter</h3>
-              <p className="text-sm text-slate-300 leading-relaxed">{lastRecord.narrative}</p>
+              <h3 className="text-sm font-semibold mb-2 uppercase tracking-wider" style={{ color: '#B8860B' }}>📜 Last Quarter</h3>
+              <p className="text-sm leading-relaxed" style={{ color: '#3D3731' }}>{lastRecord.narrative}</p>
               {/* Show indicator changes */}
               <div className="mt-3 flex flex-wrap gap-2">
                 {Object.entries(lastRecord.indicatorsAfter).map(([key, val]) => {
@@ -95,9 +101,9 @@ export default function GameScreen({ state, events, decisions, onMakeChoice, onE
                                  (meta.goodDirection === 'down' && diff < 0);
                   return (
                     <span key={key} className={`text-xs px-2 py-1 rounded-full ${
-                      isGood ? 'bg-green-500/20 text-green-400' : 
-                      meta.goodDirection === 'neutral' ? 'bg-blue-500/20 text-blue-400' :
-                      'bg-red-500/20 text-red-400'
+                      isGood ? 'bg-green-500/10 text-green-600' : 
+                      meta.goodDirection === 'neutral' ? 'bg-blue-500/10 text-blue-500' :
+                      'bg-red-500/10 text-red-500'
                     }`}>
                       {meta.emoji} {meta.name} {diff > 0 ? '↑' : '↓'}{Math.abs(diff).toFixed(1)}
                     </span>
@@ -109,7 +115,7 @@ export default function GameScreen({ state, events, decisions, onMakeChoice, onE
 
           {/* Current events */}
           <div>
-            <h2 className="text-xl font-bold mb-3 text-slate-200">
+            <h2 className="text-xl font-bold mb-3" style={{ color: '#1C1917' }}>
               🗓️ Decisions for {QUARTER_NAMES[state.quarter - 1]} {state.year}
             </h2>
             {events.map((event, i) => (
@@ -129,7 +135,7 @@ export default function GameScreen({ state, events, decisions, onMakeChoice, onE
       </div>
 
       {/* Fixed bottom bar on mobile */}
-      <div className="fixed bottom-0 left-0 right-0 p-3 sm:p-4 bg-slate-900/95 backdrop-blur-md border-t border-slate-700/50 z-40 flex items-center justify-center gap-3">
+      <div className="fixed bottom-0 left-0 right-0 p-3 sm:p-4 backdrop-blur-md z-40 flex items-center justify-center gap-3" style={{ background: 'rgba(245,240,232,0.92)', borderTop: '1px solid rgba(28,25,23,0.08)' }}>
         <FeedbackButton />
         <button
           onClick={onEndTurn}
@@ -141,9 +147,9 @@ export default function GameScreen({ state, events, decisions, onMakeChoice, onE
           }`}
           style={{
             background: allDecisionsMade 
-              ? 'linear-gradient(135deg, #D4A843, #8B6914)' 
-              : 'rgba(148, 163, 184, 0.2)',
-            color: allDecisionsMade ? '#0f172a' : '#94a3b8',
+              ? '#9E3039' 
+              : 'rgba(28, 25, 23, 0.06)',
+            color: allDecisionsMade ? '#FFFFFF' : '#78716C',
           }}
         >
           {allDecisionsMade ? '⏭️ End Quarter' : `📋 ${events.length - decisions.size} left`}
