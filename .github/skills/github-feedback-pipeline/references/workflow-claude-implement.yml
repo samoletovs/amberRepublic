@@ -26,20 +26,15 @@ on:
 
 jobs:
   # ──────────────────────────────────────────────
-  # Phase 1: Triage — evaluate the issue
+  # Phase 1: Triage — auto-label + evaluate the issue
   # ──────────────────────────────────────────────
   triage:
-    # Run on new/labeled issues that have a trigger label but haven't been triaged yet
+    # Run on newly opened issues OR labeled issues that haven't been triaged yet
     if: >-
       github.event_name == 'issues' &&
       !contains(github.event.issue.labels.*.name, 'approved') &&
       !contains(github.event.issue.labels.*.name, 'rejected') &&
-      !contains(github.event.issue.labels.*.name, 'needs-info') &&
-      (
-        contains(github.event.issue.labels.*.name, 'enhancement') ||
-        contains(github.event.issue.labels.*.name, 'bug') ||
-        contains(github.event.issue.labels.*.name, 'game-balance')
-      )
+      !contains(github.event.issue.labels.*.name, 'needs-info')
     runs-on: ubuntu-latest
     concurrency:
       group: claude-triage-${{ github.event.issue.number }}
@@ -51,15 +46,44 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Triage with Claude
+      - name: Auto-label and Triage with Claude
         uses: actions/github-script@v7
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         with:
           script: |
             const issue = context.payload.issue;
+            const title = issue.title;
+            const existingLabels = issue.labels.map(l => l.name);
 
-            // Fetch recent issues for duplicate detection
+            // Step 1: Auto-label based on title emoji prefix (if not already labeled)
+            const labelMap = [
+              { pattern: '🐛 Bug Report', label: 'bug' },
+              { pattern: '💡 Feature Idea', label: 'enhancement' },
+              { pattern: '⚖️ Balance Issue', label: 'game-balance' },
+            ];
+            const triggerLabels = ['enhancement', 'bug', 'game-balance'];
+            const match = labelMap.find(m => title.includes(m.pattern));
+
+            if (match && !existingLabels.includes(match.label)) {
+              await github.rest.issues.addLabels({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+                labels: [match.label]
+              });
+              existingLabels.push(match.label);
+              console.log(`Auto-labeled: ${match.label}`);
+            }
+
+            // Step 2: Check if issue has a trigger label (after auto-labeling)
+            const hasTrigger = existingLabels.some(l => triggerLabels.includes(l));
+            if (!hasTrigger) {
+              console.log('No trigger label found, skipping triage');
+              return;
+            }
+
+            // Step 3: Fetch recent issues for duplicate detection
             const { data: recentIssues } = await github.rest.issues.listForRepo({
               owner: context.repo.owner,
               repo: context.repo.repo,
