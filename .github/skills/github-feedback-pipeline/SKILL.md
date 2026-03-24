@@ -15,13 +15,59 @@ description: >-
 
 # GitHub Feedback Pipeline
 
-Set up a complete feedback → GitHub issues → Claude triage → auto-implementation pipeline
-for any project. This skill handles the full setup: feedback UI component, auto-labeling,
-AI-powered issue triage (approve/reject/needs-info), and automatic PR creation for
-approved issues.
+Set up a feedback pipeline for any project. The scope depends on whether this is a
+personal project or a work project with a funded account.
+
+## Personal vs Work — Choose Your Path
+
+**Ask the user first**: "Is this a personal project or a work project with a funded
+Anthropic/Azure subscription?"
+
+### Personal projects (free path)
+For personal GitHub accounts and side projects, **do NOT set up automated triage or
+implementation workflows**. The API costs add up fast — in testing, 2 auto-implemented
+issues cost ~$1.90 in Anthropic credits. That's not sustainable on a $5 balance.
+
+**What to set up:**
+1. Feedback button (so users can submit issues from the app)
+2. Auto-label workflow (free — runs on GitHub Actions, no API key needed)
+3. `CLAUDE.md` (so you have architecture docs for when you fix issues manually)
+
+**How issues get resolved:**
+- Developer reviews issues in GitHub or via `gh issue list`
+- Implements fixes in VS Code using GitHub Copilot / Claude Code (included in Pro subscription)
+- Pushes changes and closes the issue manually
+
+Skip Steps 5, 7, and 8 below. Only do Steps 1–4 and 6.
+
+### Work projects (automated path)
+For work/team accounts with a funded Anthropic API subscription or Azure OpenAI deployment,
+set up the full automated pipeline: triage + auto-implementation via PR.
+
+**What to set up:** Everything — Steps 1–8.
+
+**Cost reference** (from real-world testing):
+- Triage only: ~$0.01–0.05 per issue (Anthropic API)
+- Triage + implementation: ~$0.50–1.00 per issue
+- A team processing 20 issues/month: ~$10–20/month
+- With Azure OpenAI (GPT-4.1 nano): 5–10x cheaper
 
 ## How it works
 
+### Personal path (manual implementation)
+```
+User submits feedback (in-app button)
+        ↓
+GitHub Issue created (with title prefix)
+        ↓
+Auto-label workflow fires (adds correct label from title)
+        ↓
+Developer reviews issues in VS Code
+  → Uses GitHub Copilot / Claude Code to implement
+  → Pushes and closes issue
+```
+
+### Work path (automated implementation)
 ```
 User submits feedback (in-app button)
         ↓
@@ -40,15 +86,11 @@ Claude Implement runs (only for "approved" issues)
   → Ready for human review + merge
 ```
 
-**Important**: Auto-labeling and triage MUST be in the same workflow job.
+**Important** (work path only): Auto-labeling and triage MUST be in the same workflow job.
 GitHub Actions does not re-trigger workflows when labels are added by another
 workflow using `GITHUB_TOKEN` (to prevent infinite loops). If auto-label is a
 separate workflow, the triage workflow will never fire on newly opened issues.
 The reference template handles this correctly — both steps are in one job.
-
-**Fallback**: If the Anthropic API key runs out of credits, the user can implement
-issues manually using VS Code with GitHub Copilot / Claude Code, then push and
-close the issues directly.
 
 ## Setup Workflow
 
@@ -114,7 +156,9 @@ Read `references/workflow-auto-label.yml` and copy it to `.github/workflows/auto
 
 Adjust the emoji-to-label mapping if you changed the feedback categories in Step 2.
 
-### Step 5: Add the Claude triage + implement workflows
+### Step 5: Add the Claude triage + implement workflows (WORK PATH ONLY)
+
+Skip this step for personal projects — it requires a funded Anthropic API key.
 
 Read `references/workflow-claude-implement.yml` and copy it to `.github/workflows/claude-triage.yml`.
 Read `references/workflow-implement.yml` and copy it to `.github/workflows/claude-implement.yml`.
@@ -142,7 +186,9 @@ gh label create "game-balance" --description "Game balance adjustment" --color F
 
 Also verify that `bug` and `enhancement` labels exist (they're GitHub defaults, but confirm).
 
-### Step 7: Set up the ANTHROPIC_API_KEY secret
+### Step 7: Set up the ANTHROPIC_API_KEY secret (WORK PATH ONLY)
+
+Skip this step for personal projects.
 
 Tell the user:
 
@@ -159,7 +205,9 @@ Tell the user:
 
 Check if the secret already exists: `gh secret list` — if `ANTHROPIC_API_KEY` is present, skip this step.
 
-### Step 8: Verify the setup
+### Step 8: Verify the setup (WORK PATH ONLY)
+
+Skip for personal projects — just verify the feedback button and auto-label work.
 
 1. Commit and push all new files
 2. Create a test issue to verify the pipeline:
@@ -179,15 +227,26 @@ when Claude triages or implements an issue. This is an add-on — not part of th
 
 ## Cost Considerations
 
-Each triage evaluation costs roughly ~$0.01-0.05 in API usage (small prompt, quick assessment).
-Each implementation costs more (~$0.10-1.00 depending on complexity).
+**Real-world data from amberRepublic testing:**
+- 2 auto-triaged + auto-implemented issues consumed ~$1.90 in Anthropic API credits
+- Triage alone: ~$0.01–0.05 per issue
+- Implementation (Claude Code): ~$0.50–1.00 per issue (the expensive part)
+- On a $5 personal budget, you get ~4–5 fully automated issues before running out
 
-The triage step saves money by preventing expensive implementation runs on bad/spam issues.
-The user's Anthropic plan limits serve as the cost ceiling — no additional enforcement is needed
-in the workflow. If cost is a concern, the user can:
+**This is why the personal/work split matters:**
+- **Personal projects**: Use VS Code + GitHub Copilot (included in your Pro sub) to implement.
+  The feedback button + auto-labeling are free. Only the AI triage + implementation costs money.
+- **Work projects**: With a funded API subscription ($50+/mo) or Azure OpenAI deployment,
+  the automation pays for itself in developer time savings.
+
+**Azure OpenAI alternative** (much cheaper):
+If you have an Azure subscription, deploy GPT-4.1 nano via Azure OpenAI. It's ~10x cheaper
+than Anthropic API for triage tasks. The workflow templates support Azure OpenAI as a provider.
+
+For personal projects where cost is a concern, the user can:
+- Skip automated triage/implementation entirely (recommended)
 - Remove the `issues: [opened, labeled]` trigger so Claude only runs on `@claude` mentions
-- Add a `max_turns` limit in the claude-code-action config
-- Use a cheaper model for triage via the `model` parameter
+- Use Azure OpenAI with GPT-4.1 nano for triage only (~$0.001 per issue), skip auto-implementation
 
 ## Concurrency
 
