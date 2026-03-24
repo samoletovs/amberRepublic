@@ -1,0 +1,38 @@
+name: "Auto-label feedback issues"
+
+on:
+  issues:
+    types: [opened]
+
+jobs:
+  label:
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    steps:
+      - name: Label based on title prefix
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const title = context.payload.issue.title;
+            let label = null;
+
+            if (title.includes('🐛 Bug Report')) {
+              label = 'bug';
+            } else if (title.includes('💡 Feature Idea')) {
+              label = 'enhancement';
+            } else if (title.includes('⚖️ Balance Issue')) {
+              label = 'game-balance';
+            }
+
+            if (label) {
+              await github.rest.issues.addLabels({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                labels: [label]
+              });
+              console.log(`Added label: ${label}`);
+            } else {
+              console.log('No matching prefix found, skipping');
+            }
