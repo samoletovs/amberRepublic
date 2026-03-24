@@ -136,4 +136,3 @@ jobs:
           Automatically implemented by Claude Code based on the approved triage." \
             --base master \
             --head "$BRANCH"
-            Keep changes minimal and focused on the issue.
