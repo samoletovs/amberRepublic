@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { createPortal } from 'react-dom';
 
 const REPO_OWNER = 'samoletovs';
 const REPO_NAME = 'amberRepublic';
@@ -51,10 +52,10 @@ export default function FeedbackButton() {
     );
   }
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4" style={{ background: 'rgba(28,25,23,0.4)', backdropFilter: 'blur(4px)' }} onClick={() => setOpen(false)}>
       <div 
-        className="w-full sm:max-w-md p-5 sm:p-6 fade-in rounded-t-2xl sm:rounded-2xl"
+        className="w-full sm:max-w-md p-5 sm:p-6 fade-in rounded-t-2xl sm:rounded-2xl max-h-[90vh] overflow-y-auto"
         style={{ background: '#F5F0E8', border: '1px solid rgba(28,25,23,0.1)', boxShadow: '0 16px 48px rgba(0,0,0,0.15)' }}
         onClick={e => e.stopPropagation()}
       >
@@ -121,6 +122,7 @@ export default function FeedbackButton() {
           </>
         )}
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

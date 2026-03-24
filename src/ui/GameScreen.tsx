@@ -23,7 +23,7 @@ export default function GameScreen({ state, events, decisions, onMakeChoice, onE
   const [showIndicators, setShowIndicators] = useState(false);
 
   return (
-    <div className="min-h-screen p-2 sm:p-3 md:p-6 pb-20">
+    <div className="min-h-screen p-2 sm:p-3 md:p-6 pb-24">
       {/* Header Bar */}
       <header className="glass-card px-3 sm:px-4 py-2 sm:py-3 mb-3 sm:mb-4">
         <div className="flex items-center justify-between gap-2">

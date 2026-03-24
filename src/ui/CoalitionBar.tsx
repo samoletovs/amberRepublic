@@ -23,34 +23,35 @@ export default function CoalitionBar({ parliament }: Props) {
         </span>
       </div>
 
-      {/* Parliament bar */}
-      <div className="flex h-4 rounded-full overflow-hidden mb-3" style={{ background: 'rgba(28,25,23,0.04)' }}>
-        {parliament.parties
-          .filter(p => p.seats > 0)
-          .sort((a, b) => {
-            const aCoal = parliament.coalitionPartyIds.includes(a.id) ? 0 : 1;
-            const bCoal = parliament.coalitionPartyIds.includes(b.id) ? 0 : 1;
-            return aCoal - bCoal || b.seats - a.seats;
-          })
-          .map(party => (
-            <div
-              key={party.id}
-              className="h-full relative group transition-all"
-              style={{
-                width: `${party.seats}%`,
-                background: party.color,
-                opacity: parliament.coalitionPartyIds.includes(party.id) ? 1 : 0.35,
-              }}
-              title={`${party.name}: ${party.seats} seats (${party.approval.toFixed(0)}% approval)`}
-            />
-          ))}
-      </div>
-
-      {/* Majority line — inline with the bar */}
-      <div className="relative -mt-4 mb-3 h-0" style={{ pointerEvents: 'none' }}>
-        <div className="absolute left-1/2 -top-0.5 flex flex-col items-center" style={{ transform: 'translateX(-50%)' }}>
-          <div className="w-px h-3" style={{ background: '#1C1917' }} />
-          <span className="text-[8px] font-data mt-0.5" style={{ color: '#78716C' }}>51</span>
+      {/* Parliament bar with majority line */}
+      <div className="relative mb-3">
+        <div className="flex h-4 rounded-full overflow-hidden" style={{ background: 'rgba(28,25,23,0.04)' }}>
+          {parliament.parties
+            .filter(p => p.seats > 0)
+            .sort((a, b) => {
+              const aCoal = parliament.coalitionPartyIds.includes(a.id) ? 0 : 1;
+              const bCoal = parliament.coalitionPartyIds.includes(b.id) ? 0 : 1;
+              return aCoal - bCoal || b.seats - a.seats;
+            })
+            .map(party => (
+              <div
+                key={party.id}
+                className="h-full relative group transition-all"
+                style={{
+                  width: `${party.seats}%`,
+                  background: party.color,
+                  opacity: parliament.coalitionPartyIds.includes(party.id) ? 1 : 0.35,
+                }}
+                title={`${party.name}: ${party.seats} seats (${party.approval.toFixed(0)}% approval)`}
+              />
+            ))}
+        </div>
+        {/* Majority line overlay — positioned on top of the bar, not below it */}
+        <div className="absolute left-1/2 top-0 h-4 flex items-center" style={{ transform: 'translateX(-50%)', pointerEvents: 'none' }}>
+          <div className="w-px h-full" style={{ background: '#1C1917' }} />
+        </div>
+        <div className="text-center mt-0.5" style={{ pointerEvents: 'none' }}>
+          <span className="text-[8px] font-data" style={{ color: '#78716C', marginLeft: 'calc(50% - 4px)' }}>51</span>
         </div>
       </div>
 

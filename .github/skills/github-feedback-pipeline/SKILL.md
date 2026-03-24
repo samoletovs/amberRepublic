@@ -25,13 +25,13 @@ approved issues.
 ```
 User submits feedback (in-app button)
         ↓
-GitHub Issue created (with title prefix + labels)
+GitHub Issue created (with title prefix)
         ↓
-Auto-label workflow fires (ensures correct labels from title)
-        ↓
-Claude Triage runs — evaluates the issue:
+Claude Triage workflow fires:
+  1. Auto-labels the issue from title emoji prefix
+  2. Evaluates the issue against quality criteria
   ✅ Approved → adds "approved" label, explains reasoning
-  ❌ Rejected → adds "rejected" label, explains why
+  ❌ Rejected → adds "rejected" label, explains why, closes issue
   ❓ Needs info → adds "needs-info" label, asks clarifying questions
         ↓
 Claude Implement runs (only for "approved" issues)
@@ -39,6 +39,16 @@ Claude Implement runs (only for "approved" issues)
   → PR triggers CI (build, tests)
   → Ready for human review + merge
 ```
+
+**Important**: Auto-labeling and triage MUST be in the same workflow job.
+GitHub Actions does not re-trigger workflows when labels are added by another
+workflow using `GITHUB_TOKEN` (to prevent infinite loops). If auto-label is a
+separate workflow, the triage workflow will never fire on newly opened issues.
+The reference template handles this correctly — both steps are in one job.
+
+**Fallback**: If the Anthropic API key runs out of credits, the user can implement
+issues manually using VS Code with GitHub Copilot / Claude Code, then push and
+close the issues directly.
 
 ## Setup Workflow
 

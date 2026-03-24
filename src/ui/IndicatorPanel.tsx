@@ -18,7 +18,7 @@ export default function IndicatorPanel({ state }: Props) {
   const lastRecord = state.history[state.history.length - 1];
 
   return (
-    <div className="glass-card p-4 space-y-4 max-h-[calc(100vh-100px)] overflow-y-auto">
+    <div className="glass-card p-4 space-y-4 max-h-[calc(100vh-100px)] lg:max-h-[calc(100vh-100px)] overflow-y-auto pb-16 lg:pb-4">
       <h3 className="text-sm font-semibold uppercase tracking-wider" style={{ color: '#9E3039' }}>
         📊 State of the Republic
       </h3>
