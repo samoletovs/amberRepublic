@@ -80,7 +80,7 @@ export default function GameScreen({ state, events, decisions, onMakeChoice, onE
         {/* Center: Events & Decisions */}
         <main className="flex-1 space-y-3">
           {/* Coalition & Ratings */}
-          <CoalitionBar parliament={state.parliament} />
+          <CoalitionBar parliament={state.parliament} collapseMessage={state.coalitionCollapseMessage} />
           <RatingsBar ratings={state.ratings} />
 
           {/* Previous turn narrative */}

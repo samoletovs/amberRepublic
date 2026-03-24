@@ -2,7 +2,7 @@ import { GameState, GameEvent, TurnRecord } from './types';
 import { applyEffect, processScheduledEffects, applyCascadingEffects, checkGameOver, calculateScore } from './effects';
 import { selectEvents, generateNarrative } from './events';
 import { createRng } from './random';
-import { updatePartyApprovals, updateCoalitionLoyalty, runElection, calculateRatings, getCoalitionSeats } from './politics';
+import { updatePartyApprovals, updateCoalitionLoyalty, runElection, calculateRatings, getCoalitionSeats, getCoalitionLoyalty, applyCoalitionReactions, checkCoalitionCollapse } from './politics';
 
 export interface TurnResult {
   state: GameState;
@@ -12,7 +12,15 @@ export interface TurnResult {
 /** Start a new turn: select events to present to the player */
 export function startTurn(state: GameState, allEvents: GameEvent[]): TurnResult {
   const rng = createRng(state.seed + state.turn * 7919);
-  const events = selectEvents(state, allEvents, rng, 2);
+  // Inject virtual coalition loyalty indicator so events can use it as a precondition
+  const stateWithVirtuals: GameState = {
+    ...state,
+    indicators: {
+      ...state.indicators,
+      _coalitionLoyalty: getCoalitionLoyalty(state.parliament),
+    },
+  };
+  const events = selectEvents(stateWithVirtuals, allEvents, rng, 2);
   return { state, events };
 }
 
@@ -40,6 +48,13 @@ export function resolveTurn(
       };
     }
   }
+
+  // 1b. Coalition partners immediately react to how player choices affect their priorities
+  const allChoiceEffects = decisions.flatMap(({ event, choiceIndex }) => event.choices[choiceIndex].effects);
+  newState = {
+    ...newState,
+    parliament: applyCoalitionReactions(newState.parliament, allChoiceEffects, rng),
+  };
 
   // 2. Process scheduled effects from previous turns
   newState = processScheduledEffects(newState, rng);
@@ -82,6 +97,27 @@ export function resolveTurn(
   const rng2 = createRng(state.seed + newState.turn * 7919 + 2);
   newState.parliament = updatePartyApprovals(newState.parliament, newState.indicators, rng2);
   newState.parliament = updateCoalitionLoyalty(newState.parliament, newState.indicators, rng2);
+
+  // 7b. Check for coalition collapse
+  const collapseRng = createRng(state.seed + newState.turn * 7919 + 3);
+  const { parliament: postCollapseParl, collapsed, message } = checkCoalitionCollapse(newState.parliament, collapseRng);
+  if (collapsed) {
+    newState = { ...newState, parliament: postCollapseParl, coalitionCollapseMessage: message };
+    // If no majority coalition formed, trigger an early election
+    if (getCoalitionSeats(postCollapseParl) < 51) {
+      const earlyElRng = createRng(state.seed + newState.turn * 13337 + 1);
+      const { parliament: earlyParl, result: earlyResult } = runElection(postCollapseParl, newState.indicators, newState.turn, newState.year, earlyElRng);
+      newState = { ...newState, parliament: earlyParl };
+      if (!earlyResult.won) {
+        newState.gameOver = true;
+        newState.gameOverReason = `Coalition collapsed and the emergency election was lost. Your bloc secured only ${getCoalitionSeats(earlyParl)} seats — not enough to govern. A new government takes over.`;
+      } else {
+        newState.coalitionCollapseMessage = `Coalition collapsed! Emergency election called. New coalition secured ${getCoalitionSeats(earlyParl)} seats — you remain in power.`;
+      }
+    }
+  } else {
+    newState = { ...newState, coalitionCollapseMessage: undefined };
+  }
 
   // 8. Check for election
   if (newState.turn >= newState.parliament.nextElectionTurn) {

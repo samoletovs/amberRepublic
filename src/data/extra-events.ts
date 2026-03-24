@@ -225,6 +225,105 @@ export const extraEvents: GameEvent[] = [
     ],
   },
 
+  // ── COALITION POLITICS ───────────────────────────────────
+  {
+    id: 'coalition_budget_row',
+    title: '🤝 Coalition Budget Showdown',
+    description: 'Budget season has arrived and your coalition partners cannot agree. The Greens & Farmers want more rural spending; The Progressives demand healthcare investment. You must broker a deal — or face a fracturing coalition.',
+    preconditions: [],
+    category: 'economy', weight: 7, oneTime: false,
+    choices: [
+      { label: 'Side with Greens & Farmers', description: 'Prioritise rural development and agriculture subsidies. ZZS is satisfied. PRO is furious.', effects: [
+        { indicator: 'greenTransition', delta: 3, delay: 1, duration: 0 },
+        { indicator: 'birthRate', delta: 2, delay: 2, duration: 0 },
+        { indicator: 'healthcareQuality', delta: -2, delay: 1, duration: 0 },
+        { indicator: 'publicDebt', delta: 1.5, delay: 0, duration: 0 },
+      ], humor: 'Latvian cows are pleased. Latvian hospital waiting lists, less so.' },
+      { label: 'Side with The Progressives', description: 'Boost healthcare and social spending. PRO stays. ZZS threatens to leave.', effects: [
+        { indicator: 'healthcareQuality', delta: 4, delay: 2, duration: 0 },
+        { indicator: 'socialCohesion', delta: 2, delay: 1, duration: 0 },
+        { indicator: 'greenTransition', delta: -2, delay: 1, duration: 0 },
+        { indicator: 'publicDebt', delta: 2, delay: 0, duration: 0 },
+      ], humor: 'The Progressives celebrate. The farmers go home and mutter things about city folk.' },
+      { label: 'Split the difference', description: 'Half to rural, half to healthcare. Everyone is mildly unhappy — but still in the coalition.', effects: [
+        { indicator: 'healthcareQuality', delta: 2, delay: 2, duration: 0 },
+        { indicator: 'greenTransition', delta: 1, delay: 1, duration: 0 },
+        { indicator: 'publicDebt', delta: 2.5, delay: 0, duration: 0 },
+        { indicator: 'publicHappiness', delta: -1, delay: 0, duration: 0 },
+      ], humor: 'The compromise takes 11 hours to negotiate. Nobody leaves happy. The coalition survives anyway.' },
+    ],
+  },
+  {
+    id: 'coalition_junior_ultimatum',
+    title: '⚠️ Junior Partner Issues Ultimatum',
+    description: 'A junior coalition partner is threatening to withdraw unless you adopt one of their flagship policies. Their minister has drafted a resignation letter. The coalition\'s survival hangs on your response.',
+    preconditions: [{ indicator: '_coalitionLoyalty', op: '<', value: 45 }],
+    category: 'crisis', weight: 8, oneTime: false,
+    choices: [
+      { label: 'Accept their flagship policy', description: 'Swallow the concession. Keep the coalition alive. Pay the political cost later.', effects: [
+        { indicator: 'socialCohesion', delta: 3, delay: 1, duration: 0 },
+        { indicator: 'publicHappiness', delta: 2, delay: 1, duration: 0 },
+        { indicator: 'euStanding', delta: -1, delay: 2, duration: 0 },
+      ], humor: 'The junior partner declares victory in a 40-minute press conference. You are not invited.' },
+      { label: 'Negotiate a watered-down version', description: 'Adopt the spirit of the policy, not the letter. Might satisfy no one.', effects: [
+        { indicator: 'socialCohesion', delta: 1, delay: 1, duration: 0 },
+        { indicator: 'publicHappiness', delta: -1, delay: 0, duration: 4 },
+      ], humor: 'The compromise bill runs to 200 pages. Journalists spend three days finding out what it actually does.' },
+      { label: 'Call their bluff — refuse', description: 'They won\'t actually leave. Probably. Demonstrate who leads this coalition.', effects: [
+        { indicator: 'publicHappiness', delta: -3, delay: 1, duration: 4 },
+        { indicator: 'mediaTrust', delta: -3, delay: 0, duration: 0 },
+        { indicator: 'socialCohesion', delta: -4, delay: 1, duration: 0 },
+      ], humor: 'They actually leave. You stare at your phone for a very long minute.' },
+    ],
+  },
+  {
+    id: 'coalition_confidence_vote',
+    title: '🗳️ Vote of No Confidence Tabled',
+    description: 'The opposition has tabled a vote of no confidence. With your coalition loyalty shaky, there\'s a real chance of defections. You have one week to shore up support.',
+    preconditions: [{ indicator: '_coalitionLoyalty', op: '<', value: 35 }],
+    category: 'crisis', weight: 9, oneTime: false,
+    choices: [
+      { label: 'Offer coalition partners key concessions', description: 'Promises, promises. Give up something dear to survive the vote.', effects: [
+        { indicator: 'publicDebt', delta: 2, delay: 0, duration: 0 },
+        { indicator: 'publicHappiness', delta: 2, delay: 1, duration: 0 },
+        { indicator: 'socialCohesion', delta: 3, delay: 1, duration: 0 },
+      ], humor: 'You survive the vote 52-48. The margin is so thin that one MP had to be rushed in from hospital.' },
+      { label: 'Rally public opinion against the opposition', description: 'Go over parliament\'s head. Make it a public fight.', effects: [
+        { indicator: 'mediaTrust', delta: -3, delay: 0, duration: 0 },
+        { indicator: 'publicHappiness', delta: -2, delay: 0, duration: 4 },
+        { indicator: 'socialCohesion', delta: -3, delay: 1, duration: 0 },
+      ], humor: 'The press conference is tense. Riga\'s pundits have not slept in 36 hours. Neither have you.' },
+      { label: 'Request a snap election', description: 'If you\'re going down, go down fighting. Let the people decide.', effects: [
+        { indicator: 'publicHappiness', delta: -5, delay: 0, duration: 4 },
+        { indicator: 'socialCohesion', delta: -2, delay: 0, duration: 0 },
+        { indicator: 'gdpGrowth', delta: -0.3, delay: 1, duration: 4 },
+      ], humor: 'You call a snap election. The stock market dips. The opposition is delighted. This was their plan.' },
+    ],
+  },
+  {
+    id: 'coalition_new_partner',
+    title: '🤝 Opportunity: Recruit a New Coalition Partner',
+    description: 'A previously opposition party signals it might be willing to join the coalition if you can accommodate a few of their demands. This could strengthen your majority — or complicate governance.',
+    preconditions: [],
+    category: 'economy', weight: 4, oneTime: false,
+    choices: [
+      { label: 'Welcome them in — broaden the coalition', description: 'More seats, more stability. Also more negotiating headaches.', effects: [
+        { indicator: 'socialCohesion', delta: -2, delay: 1, duration: 4 },
+        { indicator: 'publicHappiness', delta: 2, delay: 1, duration: 0 },
+        { indicator: 'corruptionLevel', delta: 2, delay: 2, duration: 0 },
+      ], humor: 'Your cabinet now has 17 ministers. Finding meeting rooms is a logistical challenge.' },
+      { label: 'Decline — keep the coalition tight', description: 'A smaller coalition is simpler to manage. Trust is already established.', effects: [
+        { indicator: 'socialCohesion', delta: 2, delay: 1, duration: 0 },
+        { indicator: 'publicHappiness', delta: -1, delay: 0, duration: 0 },
+      ], humor: 'The rejected party goes back to the opposition benches and plots loudly.' },
+      { label: 'Negotiate their entry with strict conditions', description: 'They join, but with a limited mandate. Coalition agreement is updated.', effects: [
+        { indicator: 'socialCohesion', delta: 1, delay: 1, duration: 0 },
+        { indicator: 'publicHappiness', delta: 1, delay: 1, duration: 0 },
+        { indicator: 'mediaTrust', delta: 2, delay: 1, duration: 0 },
+      ], humor: 'The coalition agreement becomes 94 pages longer. The new partner claims victory on every page.' },
+    ],
+  },
+
   // ── SCIENCE & INNOVATION ─────────────────────────────────
   {
     id: 'quantum_lab',

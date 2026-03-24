@@ -3,9 +3,10 @@ import { getCoalitionSeats, getCoalitionLoyalty } from '../engine/politics';
 
 interface Props {
   parliament: Parliament;
+  collapseMessage?: string;
 }
 
-export default function CoalitionBar({ parliament }: Props) {
+export default function CoalitionBar({ parliament, collapseMessage }: Props) {
   const coalitionSeats = getCoalitionSeats(parliament);
   const loyalty = getCoalitionLoyalty(parliament);
   const isStable = coalitionSeats >= 51 && loyalty > 30;
@@ -77,6 +78,13 @@ export default function CoalitionBar({ parliament }: Props) {
           );
         })}
       </div>
+
+      {/* Coalition collapse / crisis alert */}
+      {collapseMessage && (
+        <div className="mt-3 px-3 py-2 rounded-lg text-xs font-semibold" style={{ background: 'rgba(220,38,38,0.08)', color: '#DC2626', border: '1px solid rgba(220,38,38,0.2)' }}>
+          🚨 {collapseMessage}
+        </div>
+      )}
 
       {/* Next election */}
       {parliament.nextElectionTurn > 0 && (

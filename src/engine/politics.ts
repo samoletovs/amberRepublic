@@ -1,5 +1,6 @@
 import type { Rng } from './random';
 import { clamp } from './random';
+import type { Effect } from './types';
 
 // ─── Latvian Political Parties (based on real 2022 Saeima) ───────
 export interface Party {
@@ -262,6 +263,87 @@ export function runElection(parliament: Parliament, indicators: Record<string, n
   };
 
   return { parliament: newParliament, result: electionResult };
+}
+
+/**
+ * Apply direct loyalty adjustments when the player makes choices that hurt or
+ * help a coalition partner's stated priorities.
+ */
+export function applyCoalitionReactions(parliament: Parliament, effects: Effect[], rng: Rng): Parliament {
+  const parties = parliament.parties.map(party => {
+    if (!parliament.coalitionPartyIds.includes(party.id) || party.isPlayer) return party;
+
+    let loyaltyDelta = 0;
+    for (const effect of effects) {
+      if (party.priorities.includes(effect.indicator)) {
+        // A positive delta on corruptionLevel is bad; negative delta is bad on all others
+        const isHurt = effect.indicator === 'corruptionLevel' ? effect.delta > 0 : effect.delta < 0;
+        loyaltyDelta += isHurt ? -2.5 : 1.0;
+      }
+    }
+
+    return {
+      ...party,
+      loyaltyToYou: clamp(party.loyaltyToYou + rng.vary(loyaltyDelta, 0.2), 5, 95),
+    };
+  });
+
+  return { ...parliament, parties };
+}
+
+/**
+ * Check whether the coalition should collapse this turn based on average loyalty.
+ * If it collapses, attempt to build a new majority from parties with loyalty > 20.
+ * Returns updated parliament plus a human-readable message.
+ */
+export function checkCoalitionCollapse(
+  parliament: Parliament,
+  rng: Rng
+): { parliament: Parliament; collapsed: boolean; message: string } {
+  const loyalty = getCoalitionLoyalty(parliament);
+
+  // No risk above loyalty 20
+  if (loyalty > 20) return { parliament, collapsed: false, message: '' };
+
+  // Probability grows as loyalty drops toward 0
+  const collapseChance = (20 - loyalty) / 20;
+  if (rng.float(0, 1) > collapseChance) return { parliament, collapsed: false, message: '' };
+
+  // Coalition collapses — try to form a new one
+  const playerParty = parliament.parties.find(p => p.isPlayer)!;
+  let newCoalitionIds = [playerParty.id];
+  let coalitionSeats = playerParty.seats;
+
+  const potentialPartners = parliament.parties
+    .filter(p => !p.isPlayer && p.id !== 'stab' && p.seats > 0)
+    .sort((a, b) => b.loyaltyToYou - a.loyaltyToYou);
+
+  for (const partner of potentialPartners) {
+    if (coalitionSeats >= 51) break;
+    if (partner.loyaltyToYou > 20) {
+      newCoalitionIds.push(partner.id);
+      coalitionSeats += partner.seats;
+    }
+  }
+
+  if (coalitionSeats >= 51) {
+    const newPartnerNames = parliament.parties
+      .filter(p => newCoalitionIds.includes(p.id) && !p.isPlayer)
+      .map(p => p.name)
+      .join(' & ');
+    return {
+      parliament: { ...parliament, coalitionPartyIds: newCoalitionIds },
+      collapsed: true,
+      message: `Coalition crisis! Partners withdrew support. Emergency negotiations produced a new coalition with ${newPartnerNames} (${coalitionSeats} seats).`,
+    };
+  }
+
+  // No majority available — minority government
+  return {
+    parliament: { ...parliament, coalitionPartyIds: [playerParty.id] },
+    collapsed: true,
+    message: 'Coalition collapsed! No majority coalition could be formed. Your party governs alone as a minority government.',
+  };
 }
 
 /** Calculate international ratings from indicators */

@@ -16,6 +16,7 @@ export interface GameState {
   parliament: Parliament;
   ratings: InternationalRatings;
   electionPending?: boolean;
+  coalitionCollapseMessage?: string;
 }
 
 export interface ScheduledEffect {
