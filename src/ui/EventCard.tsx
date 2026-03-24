@@ -1,11 +1,15 @@
+import { useState } from 'react';
 import { GameEvent } from '../engine/types';
 import { getIndicatorMeta } from '../engine/indicators';
 
 interface Props {
-  event: GameEvent;
+  event: GameEvent & { _model?: string };
   index: number;
   selectedChoice?: number;
   onChoose: (choiceIndex: number) => void;
+  aiMode?: boolean;
+  onCustomResponse?: (text: string) => void;
+  customResponseLoading?: boolean;
 }
 
 const CATEGORY_COLORS: Record<string, string> = {
@@ -19,7 +23,8 @@ const CATEGORY_COLORS: Record<string, string> = {
   culture: '#ec4899',
 };
 
-export default function EventCard({ event, index, selectedChoice, onChoose }: Props) {
+export default function EventCard({ event, index, selectedChoice, onChoose, aiMode, onCustomResponse, customResponseLoading }: Props) {
+  const [customText, setCustomText] = useState('');
   const catColor = CATEGORY_COLORS[event.category] || '#94a3b8';
 
   return (
@@ -36,6 +41,9 @@ export default function EventCard({ event, index, selectedChoice, onChoose }: Pr
             </span>
             {event.oneTime && (
               <span className="text-[10px] text-slate-500 uppercase tracking-wider">One-time</span>
+            )}
+            {event._model && (
+              <span className="text-[10px] px-1.5 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(184,134,11,0.12)', color: '#B8860B' }}>✨ {event._model}</span>
             )}
           </div>
           <h3 className="text-lg font-bold" style={{ color: '#1C1917' }}>{event.title}</h3>
@@ -108,6 +116,45 @@ export default function EventCard({ event, index, selectedChoice, onChoose }: Pr
           );
         })}
       </div>
+
+      {/* Custom response input — only in AI mode */}
+      {aiMode && onCustomResponse && (
+        <div className="mt-4 pt-4" style={{ borderTop: '1px solid rgba(28,25,23,0.08)' }}>
+          <div className="flex items-center gap-2 mb-2">
+            <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: '#B8860B' }}>✨ Or write your own response</span>
+          </div>
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={customText}
+              onChange={e => setCustomText(e.target.value)}
+              placeholder="What would you do? e.g. 'Nationalize the banks...'"
+              className="flex-1 px-3 py-2 rounded-lg text-sm border focus:outline-none"
+              style={{ background: 'rgba(28,25,23,0.03)', borderColor: 'rgba(28,25,23,0.1)', color: '#1C1917' }}
+              onKeyDown={e => {
+                if (e.key === 'Enter' && customText.trim() && !customResponseLoading) {
+                  onCustomResponse(customText.trim());
+                  setCustomText('');
+                }
+              }}
+              disabled={customResponseLoading}
+            />
+            <button
+              onClick={() => {
+                if (customText.trim() && !customResponseLoading) {
+                  onCustomResponse(customText.trim());
+                  setCustomText('');
+                }
+              }}
+              disabled={!customText.trim() || customResponseLoading}
+              className="px-3 py-2 rounded-lg text-sm font-medium text-white shrink-0"
+              style={{ background: (!customText.trim() || customResponseLoading) ? '#78716C' : '#9E3039' }}
+            >
+              {customResponseLoading ? '⏳' : '🎯 Go'}
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

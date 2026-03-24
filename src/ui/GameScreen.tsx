@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { GameState, GameEvent } from '../engine/types';
 import { INDICATORS, getIndicatorMeta } from '../engine/indicators';
+import type { AIModel } from '../engine/ai';
 import IndicatorPanel from './IndicatorPanel';
 import EventCard from './EventCard';
 import FeedbackButton from './FeedbackButton';
@@ -13,11 +14,18 @@ interface Props {
   decisions: Map<string, number>;
   onMakeChoice: (eventId: string, choiceIndex: number) => void;
   onEndTurn: () => void;
+  aiMode: boolean;
+  onToggleAI: () => void;
+  aiModels: AIModel[];
+  selectedModel?: string;
+  onSelectModel: (id: string) => void;
+  onCustomResponse: (eventId: string, text: string) => void;
+  aiLoading: boolean;
 }
 
 const QUARTER_NAMES = ['Q1 Jan-Mar', 'Q2 Apr-Jun', 'Q3 Jul-Sep', 'Q4 Oct-Dec'];
 
-export default function GameScreen({ state, events, decisions, onMakeChoice, onEndTurn }: Props) {
+export default function GameScreen({ state, events, decisions, onMakeChoice, onEndTurn, aiMode, onToggleAI, aiModels, selectedModel, onSelectModel, onCustomResponse, aiLoading }: Props) {
   const allDecisionsMade = events.every(e => decisions.has(e.id));
   const lastRecord = state.history[state.history.length - 1];
   const [showIndicators, setShowIndicators] = useState(false);
@@ -60,6 +68,37 @@ export default function GameScreen({ state, events, decisions, onMakeChoice, onE
             </div>
           </div>
         </div>
+        {/* AI Mode Controls */}
+        {aiModels.length > 0 && (
+          <div className="flex items-center gap-2 mt-2 pt-2" style={{ borderTop: '1px solid rgba(28,25,23,0.06)' }}>
+            <button
+              onClick={onToggleAI}
+              className="px-2.5 py-1 rounded-lg text-[10px] sm:text-xs font-medium transition-all"
+              style={{
+                background: aiMode ? 'rgba(184,134,11,0.15)' : 'rgba(28,25,23,0.05)',
+                color: aiMode ? '#B8860B' : '#78716C',
+                border: `1px solid ${aiMode ? 'rgba(184,134,11,0.3)' : 'rgba(28,25,23,0.1)'}`,
+              }}
+            >
+              {aiMode ? '✨ AI On' : '🎲 Classic'}
+            </button>
+            {aiMode && (
+              <select
+                value={selectedModel}
+                onChange={e => onSelectModel(e.target.value)}
+                className="px-2 py-1 rounded-lg text-[10px] sm:text-xs border"
+                style={{ background: 'rgba(28,25,23,0.03)', borderColor: 'rgba(28,25,23,0.1)', color: '#3D3731' }}
+              >
+                {aiModels.map(m => (
+                  <option key={m.id} value={m.id}>{m.label}</option>
+                ))}
+              </select>
+            )}
+            {aiMode && aiLoading && (
+              <span className="text-[10px] sm:text-xs" style={{ color: '#B8860B' }}>⏳ AI thinking...</span>
+            )}
+          </div>
+        )}
       </header>
 
       {/* Mobile indicators toggle */}
@@ -125,6 +164,9 @@ export default function GameScreen({ state, events, decisions, onMakeChoice, onE
                 index={i}
                 selectedChoice={decisions.get(event.id)}
                 onChoose={(choiceIndex) => onMakeChoice(event.id, choiceIndex)}
+                aiMode={aiMode}
+                onCustomResponse={(text) => onCustomResponse(event.id, text)}
+                customResponseLoading={aiLoading}
               />
             ))}
           </div>
