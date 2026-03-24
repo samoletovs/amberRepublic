@@ -1,60 +1,73 @@
 ---
 name: github-feedback-pipeline
 description: >-
-  Set up a complete feedback-to-code pipeline for any project: in-app feedback button
-  that creates GitHub issues, auto-labeling workflow, Claude AI triage that evaluates
-  and approves/rejects issues, and auto-implementation via PR. Use this skill when
-  the user wants to add a feedback form, user feedback system, issue-to-code pipeline,
-  Claude auto-fix workflow, GitHub issue automation, or any variation of "let users
-  submit feedback that gets automatically triaged and implemented." Also trigger when
-  the user says "add feedback button", "set up auto-fix", "automate issue resolution",
-  "Claude workflow for GitHub issues", or wants to replicate the amberRepublic feedback
-  pipeline on another project. DO NOT trigger for general GitHub Actions questions,
-  manual issue management, or CI/CD pipelines that don't involve feedback/triage.
+  Set up a feedback-to-code pipeline for any project: in-app feedback button that
+  creates GitHub issues, auto-labeling workflow, and optionally AI-powered triage
+  and auto-implementation. Adapts automatically based on available credentials —
+  supports GitHub Copilot coding agent, Claude Code, OpenAI, and Azure OpenAI.
+  Use this skill when the user wants to add a feedback form, user feedback system,
+  issue-to-code pipeline, auto-fix workflow, GitHub issue automation, or any
+  variation of "let users submit feedback that gets automatically triaged and
+  implemented." Also trigger when the user says "add feedback button", "set up
+  auto-fix", "automate issue resolution", or wants to replicate the amberRepublic
+  feedback pipeline on another project. DO NOT trigger for general GitHub Actions
+  questions, manual issue management, or CI/CD pipelines without feedback/triage.
 ---
 
 # GitHub Feedback Pipeline
 
-Set up a feedback pipeline for any project. The scope depends on whether this is a
-personal project or a work project with a funded account.
+Set up a feedback pipeline for any project. The pipeline adapts automatically
+based on what's available on the repo — no configuration questions needed.
 
-## Personal vs Work — Choose Your Path
+## Auto-Detection
 
-**Ask the user first**: "Is this a personal project or a work project with a funded
-Anthropic/Azure subscription?"
+In Step 1, run these checks to determine what automation is possible:
 
-### Personal projects (free path)
-For personal GitHub accounts and side projects, **do NOT set up automated triage or
-implementation workflows**. The API costs add up fast — in testing, 2 auto-implemented
-issues cost ~$1.90 in Anthropic credits. That's not sustainable on a $5 balance.
+```bash
+# 1. Check repo secrets for AI provider credentials
+gh secret list
 
-**What to set up:**
-1. Feedback button (so users can submit issues from the app)
-2. Auto-label workflow (free — runs on GitHub Actions, no API key needed)
-3. `CLAUDE.md` (so you have architecture docs for when you fix issues manually)
+# 2. Check if GitHub Copilot coding agent is available on this repo
+#    (requires Copilot subscription on the repo owner's account/org)
+gh api repos/OWNER/REPO/copilot --jq '.enabled' 2>/dev/null || echo "not available"
+```
 
-**How issues get resolved:**
-- Developer reviews issues in GitHub or via `gh issue list`
-- Implements fixes in VS Code using GitHub Copilot / Claude Code (included in Pro subscription)
-- Pushes changes and closes the issue manually
+The pipeline adapts based on what's detected:
 
-Skip Steps 5, 7, and 8 below. Only do Steps 1–4 and 6.
+### Automation tiers
 
-### Work projects (automated path)
-For work/team accounts with a funded Anthropic API subscription or Azure OpenAI deployment,
-set up the full automated pipeline: triage + auto-implementation via PR.
+| Available | Triage | Auto-implement | Cost |
+|-----------|--------|----------------|------|
+| **Copilot coding agent** (repo owner has Copilot) | Auto-label only | Assign `copilot` to issues | Free (included in Copilot sub) |
+| **API credits** (`ANTHROPIC_API_KEY` secret) | AI triage + label | Claude Code Action creates PRs | ~$0.50-1.00/issue |
+| **API credits** (`OPENAI_API_KEY` or `AZURE_OPENAI_KEY`) | AI triage + label | Manual (VS Code) | ~$0.01-0.05/issue for triage |
+| **Nothing detected** | Auto-label only | Manual (VS Code) | Free |
 
-**What to set up:** Everything — Steps 1–8.
+**Important constraint**: GitHub Copilot coding agent is tied to the **repo owner's** account.
+If the repo is under a personal account (e.g. `samoletovs`) but Copilot is on a work account
+(e.g. `dandreje@microsoft.com`), Copilot coding agent won't be available on that repo.
+The user can still use Copilot in VS Code to implement issues manually — it just won't
+auto-create PRs on GitHub.
 
-**Cost reference** (from real-world testing):
-- Triage only: ~$0.01–0.05 per issue (Anthropic API)
-- Triage + implementation: ~$0.50–1.00 per issue
-- A team processing 20 issues/month: ~$10–20/month
-- With Azure OpenAI (GPT-4.1 nano): 5–10x cheaper
+### What's always set up (free)
+1. Feedback button (in-app issue creation)
+2. Auto-label workflow (GitHub Actions — free)
+3. `CLAUDE.md` / project instructions (architecture docs for any AI assistant)
+4. GitHub labels
+
+### What's added when automation is available
+5. *If Copilot*: auto-label workflow assigns `copilot` to labeled issues
+6. *If API credentials*: triage workflow (evaluates issues, posts assessment)
+7. *If Anthropic key*: implementation workflow (Claude Code creates PRs)
+
+### Default path (always works)
+Issues stay labeled. Developer picks them up in VS Code using whatever AI assistant
+they have — GitHub Copilot, Claude Code, Cursor, or none. This is the expected path
+for most projects. Automated implementation is a bonus, not a requirement.
 
 ## How it works
 
-### Personal path (manual implementation)
+### Without automation (default)
 ```
 User submits feedback (in-app button)
         ↓
@@ -62,191 +75,181 @@ GitHub Issue created (with title prefix)
         ↓
 Auto-label workflow fires (adds correct label from title)
         ↓
-Developer reviews issues in VS Code
-  → Uses GitHub Copilot / Claude Code to implement
-  → Pushes and closes issue
+Developer picks up issues in VS Code
+  → Uses any AI assistant (Copilot, Claude Code, etc.)
+  → Pushes changes and closes issue
 ```
 
-### Work path (automated implementation)
+### With Copilot coding agent
 ```
 User submits feedback (in-app button)
         ↓
 GitHub Issue created (with title prefix)
         ↓
-Claude Triage workflow fires:
+Auto-label workflow fires:
+  1. Adds correct label from title
+  2. Assigns "copilot" to the issue
+        ↓
+Copilot coding agent picks it up
+  → Reads CLAUDE.md for project context
+  → Creates a PR with the fix/feature
+  → Free (included in Copilot subscription)
+```
+
+### With API credentials (full pipeline)
+```
+User submits feedback (in-app button)
+        ↓
+GitHub Issue created (with title prefix)
+        ↓
+Triage workflow fires:
   1. Auto-labels the issue from title emoji prefix
-  2. Evaluates the issue against quality criteria
+  2. Calls AI to evaluate against quality criteria
   ✅ Approved → adds "approved" label, explains reasoning
   ❌ Rejected → adds "rejected" label, explains why, closes issue
   ❓ Needs info → adds "needs-info" label, asks clarifying questions
         ↓
-Claude Implement runs (only for "approved" issues)
-  → Creates a PR with the fix/feature
-  → PR triggers CI (build, tests)
-  → Ready for human review + merge
+(If Anthropic key) Claude Implement creates PR for approved issues
+(If Copilot available) Assigns copilot to approved issues
+(Otherwise) Issues wait for manual implementation in VS Code
 ```
 
-**Important** (work path only): Auto-labeling and triage MUST be in the same workflow job.
-GitHub Actions does not re-trigger workflows when labels are added by another
-workflow using `GITHUB_TOKEN` (to prevent infinite loops). If auto-label is a
-separate workflow, the triage workflow will never fire on newly opened issues.
-The reference template handles this correctly — both steps are in one job.
+**Important**: When using API-powered triage, auto-labeling and triage MUST be in the
+same workflow job. GitHub Actions does not re-trigger workflows when labels are added
+by `GITHUB_TOKEN` (anti-loop protection). The reference template handles this correctly.
 
 ## Setup Workflow
 
-Follow these steps in order. Read each reference file as needed — don't load them all upfront.
+Follow these steps in order. Read each reference file as needed.
 
-### Step 1: Detect the project
+### Step 1: Detect the project and available automation
 
-Before doing anything, understand the project:
+Before doing anything, understand the project and what automation is possible:
 
-1. Read the project's `package.json`, `Cargo.toml`, `pyproject.toml`, `go.mod`, or equivalent to identify the stack
+1. Read the project's `package.json`, `Cargo.toml`, `pyproject.toml`, `go.mod`, or equivalent
 2. Check if it's a web app (React, Vue, Svelte, vanilla HTML) or a CLI/library/backend
 3. Look for an existing `CLAUDE.md` or `.github/` directory
 4. Identify the GitHub remote: `git remote -v` to get `OWNER/REPO`
-5. Check the default branch name: `git branch --show-current` or `git symbolic-ref refs/remotes/origin/HEAD`
+5. Check the default branch name
+6. **Detect automation level**:
+   ```bash
+   # Check for API credentials
+   gh secret list --repo OWNER/REPO
+   # Check for Copilot coding agent
+   gh api repos/OWNER/REPO --jq '.owner.type' 2>/dev/null
+   ```
+   - If `ANTHROPIC_API_KEY` found → full triage + implementation available
+   - If `OPENAI_API_KEY` or `AZURE_OPENAI_KEY` found → triage available
+   - If repo owner has Copilot → Copilot auto-assign available
+   - If nothing → manual path only (still set up feedback + auto-label)
 
-Store these facts — you'll use them in every subsequent step.
+Report what was detected and proceed accordingly.
 
 ### Step 2: Add the feedback component
 
 **For web apps (React/TypeScript):**
 Read `references/feedback-button-react.tsx` and adapt it:
 - Replace `REPO_OWNER` and `REPO_NAME` with the actual values
-- Adjust the feedback categories to match the project (e.g., a dashboard might use "Bug Report" / "Feature Request" / "Data Issue" instead of "Bug Report" / "Feature Idea" / "Balance Issue")
-- Match the project's existing styling approach (Tailwind, CSS modules, styled-components, etc.)
+- Adjust the feedback categories to match the project
+- Match the project's existing styling approach
 - Place the component where it makes sense in the app's layout
 
 **For web apps (vanilla HTML/JS):**
-Read `references/feedback-button-html.html` and adapt it:
-- Replace the repo owner/name placeholders
-- Adjust categories
-- Add to the project's main HTML file or create a standalone widget
+Read `references/feedback-button-html.html` and adapt it.
 
 **For non-web projects (CLI, library, backend):**
-Skip the feedback component. Instead, tell the user:
-> "This project doesn't have a UI for a feedback button. Users can submit feedback
-> directly as GitHub issues. The auto-label and triage workflows will still work
-> for any issues created manually or via GitHub's issue templates."
-
-Optionally, create a `.github/ISSUE_TEMPLATE/` with templates matching the feedback categories.
+Skip the feedback component. Optionally create `.github/ISSUE_TEMPLATE/` with templates.
 
 ### Step 3: Create CLAUDE.md
 
 Read `references/claude-instructions-template.md` for the template structure.
 
-Generate a project-specific `CLAUDE.md` at the repo root by analyzing:
-- The directory structure (`find . -type f -name '*.ts' -o -name '*.py' ...` or equivalent)
-- Key files (entry points, config files, READMEs)
-- Build/test commands from package.json scripts, Makefile, etc.
-- Architecture patterns visible in the code
+Generate a project-specific `CLAUDE.md` at the repo root. This benefits ALL paths —
+VS Code AI assistants, Copilot coding agent, and Claude Code all read it.
 
-The CLAUDE.md should tell an AI agent everything it needs to implement changes correctly:
-- Project overview (1-2 sentences)
-- Architecture (key directories and what they contain)
-- Key rules (coding conventions, patterns to follow)
-- How to build and test
-- Style/theme info (if it's a UI project)
-
-If a CLAUDE.md already exists, review it and update if needed rather than replacing it.
+If a CLAUDE.md already exists, review and update rather than replacing.
 
 ### Step 4: Add the auto-label workflow
 
-Read `references/workflow-auto-label.yml` and copy it to `.github/workflows/auto-label-issues.yml`.
+Read `references/workflow-auto-label.yml` and copy to `.github/workflows/auto-label-issues.yml`.
 
-Adjust the emoji-to-label mapping if you changed the feedback categories in Step 2.
+**If Copilot coding agent is available**, modify the workflow to also assign `copilot`
+to the issue after labeling:
+```javascript
+// After adding the label:
+await github.rest.issues.addAssignees({
+  owner: context.repo.owner,
+  repo: context.repo.repo,
+  issue_number: context.issue.number,
+  assignees: ['copilot']
+});
+```
 
-### Step 5: Add the Claude triage + implement workflows (WORK PATH ONLY)
+### Step 5: Add AI triage workflow (if API credentials detected)
 
-Skip this step for personal projects — it requires a funded Anthropic API key.
+Skip if no API credentials were found in Step 1.
 
-Read `references/workflow-claude-implement.yml` and copy it to `.github/workflows/claude-triage.yml`.
-Read `references/workflow-implement.yml` and copy it to `.github/workflows/claude-implement.yml`.
+Read `references/workflow-claude-implement.yml` and copy to `.github/workflows/claude-triage.yml`.
 
-These are two separate workflows connected by `repository_dispatch`:
-1. **Triage** (`claude-triage.yml`) — auto-labels, evaluates the issue, adds approval label.
-   If approved, fires a `repository_dispatch` event to trigger implementation.
-2. **Implement** (`claude-implement.yml`) — runs Claude Code to create a PR.
-   Also responds to `@claude` comments for manual triggering.
+The triage workflow:
+- Auto-labels from title emoji prefix
+- Calls the AI provider to evaluate the issue
+- Posts a triage comment (approved/rejected/needs-info)
+- If approved and Anthropic key available: fires `repository_dispatch` for implementation
+- If approved and Copilot available: assigns `copilot` to the issue
+- Otherwise: issue stays labeled for manual pickup
 
-They must be separate because GitHub Actions does not re-trigger workflows when
-labels or comments are added by `GITHUB_TOKEN` (anti-loop protection). The
-`repository_dispatch` event bridges this gap.
+### Step 6: Add implementation workflow (if Anthropic key detected)
 
-### Step 6: Create GitHub labels
+Skip if no `ANTHROPIC_API_KEY` found.
 
-Run these commands (adjust colors as desired):
+Read `references/workflow-implement.yml` and copy to `.github/workflows/claude-implement.yml`.
+
+This uses `repository_dispatch` from the triage workflow. They must be separate because
+GitHub Actions won't re-trigger from labels added by `GITHUB_TOKEN`.
+
+### Step 7: Create GitHub labels
 
 ```bash
 gh label create "approved" --description "Triaged and approved for implementation" --color 0E8A16 --force
-gh label create "rejected" --description "Triaged and rejected — not actionable" --color D93F0B --force
-gh label create "needs-info" --description "More information needed before triage" --color FBCA04 --force
-gh label create "game-balance" --description "Game balance adjustment" --color FBCA04 --force
+gh label create "rejected" --description "Triaged and rejected" --color D93F0B --force
+gh label create "needs-info" --description "More information needed" --color FBCA04 --force
 ```
 
-Also verify that `bug` and `enhancement` labels exist (they're GitHub defaults, but confirm).
+Also verify `bug` and `enhancement` labels exist.
 
-### Step 7: Set up the ANTHROPIC_API_KEY secret (WORK PATH ONLY)
-
-Skip this step for personal projects.
-
-Tell the user:
-
-> To enable Claude auto-triage and auto-implementation, you need to add your Anthropic
-> API key as a GitHub secret:
->
-> 1. Go to https://github.com/OWNER/REPO/settings/secrets/actions
-> 2. Click "New repository secret"
-> 3. Name: `ANTHROPIC_API_KEY`
-> 4. Value: your Anthropic API key from https://console.anthropic.com/settings/keys
-> 5. Click "Add secret"
->
-> Or use the CLI: `gh secret set ANTHROPIC_API_KEY`
-
-Check if the secret already exists: `gh secret list` — if `ANTHROPIC_API_KEY` is present, skip this step.
-
-### Step 8: Verify the setup (WORK PATH ONLY)
-
-Skip for personal projects — just verify the feedback button and auto-label work.
+### Step 8: Verify the setup
 
 1. Commit and push all new files
-2. Create a test issue to verify the pipeline:
+2. Create a test issue:
    ```bash
-   gh issue create --title "[💡 Feature Idea] Test issue — verify feedback pipeline" \
-     --body "This is a test issue to verify the feedback pipeline is working. Please triage and close." \
-     --repo OWNER/REPO
+   gh issue create --title "[💡 Feature Idea] Test — verify feedback pipeline" \
+     --body "Test issue to verify the pipeline. Please triage and close."
    ```
-3. Check that the auto-label workflow fires: `gh run list --limit 3`
-4. Check that the triage workflow fires and posts a comment
-5. If everything works, close the test issue
+3. Verify auto-label fires: `gh run list --limit 3`
+4. If triage is set up: verify triage comment appears
+5. If Copilot is set up: verify copilot was assigned
+6. Close the test issue
 
 ### Step 9 (Optional): Telegram notifications
 
-If the user has the `telegram-notify` skill available, mention that they can get notified
-when Claude triages or implements an issue. This is an add-on — not part of the core setup.
+If the `telegram-notify` skill is available, mention it as an add-on for post-triage notifications.
 
-## Cost Considerations
+## Cost Reference
 
-**Real-world data from amberRepublic testing:**
-- 2 auto-triaged + auto-implemented issues consumed ~$1.90 in Anthropic API credits
-- Triage alone: ~$0.01–0.05 per issue
-- Implementation (Claude Code): ~$0.50–1.00 per issue (the expensive part)
-- On a $5 personal budget, you get ~4–5 fully automated issues before running out
+**Real-world data from amberRepublic testing (March 2026):**
 
-**This is why the personal/work split matters:**
-- **Personal projects**: Use VS Code + GitHub Copilot (included in your Pro sub) to implement.
-  The feedback button + auto-labeling are free. Only the AI triage + implementation costs money.
-- **Work projects**: With a funded API subscription ($50+/mo) or Azure OpenAI deployment,
-  the automation pays for itself in developer time savings.
+| Method | Cost per issue | Notes |
+|--------|---------------|-------|
+| Copilot coding agent | $0 | Included in Copilot subscription. Best option when available. |
+| VS Code + AI assistant | $0 | Manual but free. Developer uses Copilot/Claude Code locally. |
+| AI triage only (GPT-4.1 nano via Azure) | ~$0.001 | Cheapest API option for triage. |
+| AI triage only (Anthropic Haiku) | ~$0.01-0.05 | |
+| AI triage + implementation (Claude Code) | ~$0.50-1.00 | Expensive. 2 issues = $1.90 in testing. |
 
-**Azure OpenAI alternative** (much cheaper):
-If you have an Azure subscription, deploy GPT-4.1 nano via Azure OpenAI. It's ~10x cheaper
-than Anthropic API for triage tasks. The workflow templates support Azure OpenAI as a provider.
-
-For personal projects where cost is a concern, the user can:
-- Skip automated triage/implementation entirely (recommended)
-- Remove the `issues: [opened, labeled]` trigger so Claude only runs on `@claude` mentions
-- Use Azure OpenAI with GPT-4.1 nano for triage only (~$0.001 per issue), skip auto-implementation
+**Recommendation**: Use Copilot coding agent when the repo is under an account with Copilot.
+For personal repos without Copilot, use auto-label + manual VS Code implementation.
+Only use API-powered implementation when you have a funded subscription that justifies the cost.
 
 ## Concurrency
 
