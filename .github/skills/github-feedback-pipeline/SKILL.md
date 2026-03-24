@@ -9,8 +9,8 @@ description: >-
   issue-to-code pipeline, auto-fix workflow, GitHub issue automation, or any
   variation of "let users submit feedback that gets automatically triaged and
   implemented." Also trigger when the user says "add feedback button", "set up
-  auto-fix", "automate issue resolution", or wants to replicate the amberRepublic
-  feedback pipeline on another project. DO NOT trigger for general GitHub Actions
+  auto-fix", "automate issue resolution", or wants to replicate a feedback
+  pipeline on another project. DO NOT trigger for general GitHub Actions
   questions, manual issue management, or CI/CD pipelines without feedback/triage.
 ---
 
@@ -43,10 +43,10 @@ The pipeline adapts based on what's detected:
 | **API credits** (`OPENAI_API_KEY` or `AZURE_OPENAI_KEY`) | AI triage + label | Manual (VS Code) | ~$0.01-0.05/issue for triage |
 | **Nothing detected** | Auto-label only | Manual (VS Code) | Free |
 
-**Important constraint**: GitHub Copilot coding agent is tied to the **repo owner's** account.
-If the repo is under a personal account (e.g. `samoletovs`) but Copilot is on a work account
-(e.g. `dandreje@microsoft.com`), Copilot coding agent won't be available on that repo.
-The user can still use Copilot in VS Code to implement issues manually — it just won't
+**Important constraint**: GitHub Copilot coding agent is tied to the **repo owner's** account
+or organization. If the repo owner doesn't have a Copilot subscription, the coding agent
+won't be available — even if the developer using VS Code has Copilot on a different account.
+The developer can still use Copilot in VS Code to implement issues manually — it just won't
 auto-create PRs on GitHub.
 
 ### What's always set up (free)
@@ -237,7 +237,7 @@ If the `telegram-notify` skill is available, mention it as an add-on for post-tr
 
 ## Cost Reference
 
-**Real-world data from amberRepublic testing (March 2026):**
+**Real-world cost data (March 2026):**
 
 | Method | Cost per issue | Notes |
 |--------|---------------|-------|
