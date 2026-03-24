@@ -125,7 +125,7 @@ async function callAnthropic(systemPrompt, userPrompt, model, apiKey, maxTokens)
  * @param {number} maxTokens
  * @returns {{ text: string, model: string } | null}
  */
-export async function callLLM(systemPrompt, userPrompt, preferredModel = null, maxTokens = 1024) {
+async function callLLM(systemPrompt, userPrompt, preferredModel = null, maxTokens = 1024) {
   const azureEndpoint = process.env.AZURE_OPENAI_ENDPOINT;
   const azureKey = process.env.AZURE_OPENAI_KEY;
   const openaiKey = process.env.OPENAI_API_KEY;
@@ -162,7 +162,7 @@ export async function callLLM(systemPrompt, userPrompt, preferredModel = null, m
 }
 
 /** Get list of available models (those with API keys configured) */
-export function getAvailableModels() {
+function getAvailableModels() {
   const azureEndpoint = process.env.AZURE_OPENAI_ENDPOINT;
   const azureKey = process.env.AZURE_OPENAI_KEY;
   const openaiKey = process.env.OPENAI_API_KEY;
@@ -173,3 +173,5 @@ export function getAvailableModels() {
     (m.provider === 'anthropic' && anthropicKey)
   ).map(m => ({ id: m.id, label: m.label, provider: m.provider }));
 }
+
+module.exports = { callLLM, getAvailableModels };

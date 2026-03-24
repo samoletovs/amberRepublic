@@ -1,5 +1,5 @@
-import { app } from '@azure/functions';
-import { callLLM, getAvailableModels } from '../llm.js';
+const { app } = require('@azure/functions');
+const { callLLM, getAvailableModels } = require('../llm.js');
 
 const SYSTEM_PROMPT = `You are at the heart of "Amber Republic," a political simulation game set in modern Latvia (2025-2035). The player is Prime Minister navigating real Latvian politics.
 

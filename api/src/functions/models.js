@@ -1,5 +1,5 @@
-import { app } from '@azure/functions';
-import { getAvailableModels } from '../llm.js';
+const { app } = require('@azure/functions');
+const { getAvailableModels } = require('../llm.js');
 
 app.http('models', {
   methods: ['GET'],
