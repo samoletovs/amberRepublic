@@ -213,38 +213,16 @@ jobs:
               });
             }
 
+            // If approved, trigger implementation via repository_dispatch
+            // (GitHub won't re-trigger workflows from labels/comments added by GITHUB_TOKEN,
+            // but repository_dispatch events DO trigger new workflow runs)
+            if (label === 'approved') {
+              await github.rest.repos.createDispatchEvent({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                event_type: 'implement-issue',
+                client_payload: { issue_number: issue.number }
+              });
+            }
+
             console.log(`Issue #${issue.number} triaged as: ${label}`);
-
-  # ──────────────────────────────────────────────
-  # Phase 2: Implement — only for approved issues
-  # ──────────────────────────────────────────────
-  implement:
-    # Run when "approved" label is added (by triage or manually)
-    if: >-
-      (github.event_name == 'issues' && github.event.action == 'labeled' &&
-       github.event.label.name == 'approved') ||
-      (github.event_name == 'issue_comment' &&
-       contains(github.event.comment.body, '@claude'))
-    runs-on: ubuntu-latest
-    concurrency:
-      group: claude-implement-${{ github.event.issue.number }}
-      cancel-in-progress: true
-    permissions:
-      contents: write
-      pull-requests: write
-      issues: write
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Implement with Claude
-        uses: anthropics/claude-code-action@v1
-        with:
-          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          trigger_phrase: "@claude"
-          label_trigger: "approved"
-          prompt: |
-            Read CLAUDE.md for the full architecture guide before making any changes.
-            Keep changes minimal and focused on the issue.
-            Run the project's build/test command to verify no errors before finishing.
