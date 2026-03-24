@@ -1,5 +1,5 @@
-import { app } from '@azure/functions';
-import { callLLM, getAvailableModels } from '../llm.js';
+const { app } = require('@azure/functions');
+const { callLLM, getAvailableModels } = require('../llm.js');
 
 const SYSTEM_PROMPT = `You are the consequence engine for "Amber Republic," a political simulation game set in Latvia. The player typed a custom response to a political event instead of choosing a predefined option.
 
