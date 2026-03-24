@@ -52,15 +52,16 @@ export default function FeedbackButton() {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4" style={{ background: 'rgba(28,25,23,0.3)' }} onClick={() => setOpen(false)}>
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4" style={{ background: 'rgba(28,25,23,0.4)', backdropFilter: 'blur(4px)' }} onClick={() => setOpen(false)}>
       <div 
-        className="glass-card w-full sm:max-w-md p-5 sm:p-6 fade-in rounded-t-2xl sm:rounded-2xl"
+        className="w-full sm:max-w-md p-5 sm:p-6 fade-in rounded-t-2xl sm:rounded-2xl"
+        style={{ background: '#F5F0E8', border: '1px solid rgba(28,25,23,0.1)', boxShadow: '0 16px 48px rgba(0,0,0,0.15)' }}
         onClick={e => e.stopPropagation()}
       >
         {sent ? (
           <div className="text-center py-4">
             <div className="text-4xl mb-2">✅</div>
-            <p className="text-slate-300">Opening GitHub issue...</p>
+            <p style={{ color: '#3D3731' }}>Opening GitHub issue...</p>
           </div>
         ) : (
           <>

@@ -46,9 +46,12 @@ export default function CoalitionBar({ parliament }: Props) {
           ))}
       </div>
 
-      {/* Majority line */}
-      <div className="relative h-0 -mt-7 mb-4" style={{ pointerEvents: 'none' }}>
-        <div className="absolute left-1/2 top-0 w-px h-4" style={{ background: '#1C1917', transform: 'translateX(-50%)' }} />
+      {/* Majority line — inline with the bar */}
+      <div className="relative -mt-4 mb-3 h-0" style={{ pointerEvents: 'none' }}>
+        <div className="absolute left-1/2 -top-0.5 flex flex-col items-center" style={{ transform: 'translateX(-50%)' }}>
+          <div className="w-px h-3" style={{ background: '#1C1917' }} />
+          <span className="text-[8px] font-data mt-0.5" style={{ color: '#78716C' }}>51</span>
+        </div>
       </div>
 
       {/* Coalition parties */}
