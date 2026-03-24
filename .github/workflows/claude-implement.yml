@@ -8,7 +8,6 @@ on:
 
 jobs:
   implement:
-    # Run when dispatched from triage OR when someone comments @claude
     if: >-
       github.event_name == 'repository_dispatch' ||
       (github.event_name == 'issue_comment' &&
@@ -34,7 +33,9 @@ jobs:
             echo "number=${{ github.event.issue.number }}" >> $GITHUB_OUTPUT
           fi
 
-      - name: Implement with Claude
+      # For issue_comment events, use claude-code-action directly (it has issue context)
+      - name: Implement with Claude (comment trigger)
+        if: github.event_name == 'issue_comment'
         uses: anthropics/claude-code-action@v1
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
@@ -50,4 +51,89 @@ jobs:
             For bugs, fix the issue in the relevant component.
             For features, add new code following existing patterns.
             Run `npm install && npm run build` to verify no errors before finishing.
+            Keep changes minimal and focused on the issue.
+
+      # For repository_dispatch, fetch issue and run Claude Code CLI directly
+      - name: Fetch issue details
+        if: github.event_name == 'repository_dispatch'
+        id: fetch
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          ISSUE_NUM="${{ github.event.client_payload.issue_number }}"
+          ISSUE_JSON=$(gh issue view "$ISSUE_NUM" --json title,body,comments,labels)
+          TITLE=$(echo "$ISSUE_JSON" | jq -r '.title')
+          BODY=$(echo "$ISSUE_JSON" | jq -r '.body')
+          LABELS=$(echo "$ISSUE_JSON" | jq -r '[.labels[].name] | join(", ")')
+          COMMENTS=$(echo "$ISSUE_JSON" | jq -r '.comments[] | "[\(.author.login)]: \(.body)"' | tail -5)
+
+          # Write prompt to file to avoid shell escaping issues
+          cat > /tmp/claude-prompt.txt << 'PROMPT_END'
+          Read CLAUDE.md for the full architecture guide before making any changes.
+
+          You are implementing a GitHub issue. Here are the details:
+          PROMPT_END
+
+          echo "Issue #${ISSUE_NUM}: ${TITLE}" >> /tmp/claude-prompt.txt
+          echo "Labels: ${LABELS}" >> /tmp/claude-prompt.txt
+          echo "" >> /tmp/claude-prompt.txt
+          echo "Description:" >> /tmp/claude-prompt.txt
+          echo "${BODY}" >> /tmp/claude-prompt.txt
+          echo "" >> /tmp/claude-prompt.txt
+          echo "Recent comments:" >> /tmp/claude-prompt.txt
+          echo "${COMMENTS}" >> /tmp/claude-prompt.txt
+          echo "" >> /tmp/claude-prompt.txt
+          cat >> /tmp/claude-prompt.txt << 'PROMPT_END'
+          INSTRUCTIONS:
+          1. Read the relevant source files to understand the codebase
+          2. Implement the requested change
+          3. Run `npm install && npm run build` to verify no errors
+          4. Keep changes minimal and focused on the issue
+          PROMPT_END
+
+          echo "issue_number=${ISSUE_NUM}" >> $GITHUB_OUTPUT
+          echo "issue_title=${TITLE}" >> $GITHUB_OUTPUT
+
+      - name: Install Claude Code
+        if: github.event_name == 'repository_dispatch'
+        run: npm install -g @anthropic-ai/claude-code
+
+      - name: Implement with Claude Code CLI
+        if: github.event_name == 'repository_dispatch'
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          claude -p "$(cat /tmp/claude-prompt.txt)" --allowedTools "Bash,Read,Write,Edit" --output-format text
+
+      - name: Create PR
+        if: github.event_name == 'repository_dispatch'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          ISSUE_NUM="${{ steps.fetch.outputs.issue_number }}"
+          BRANCH="claude/issue-${ISSUE_NUM}"
+
+          # Check if there are changes to commit
+          if git diff --quiet && git diff --cached --quiet; then
+            echo "No changes made by Claude"
+            gh issue comment "$ISSUE_NUM" --body "🤖 Claude reviewed this issue but determined no code changes were needed."
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git checkout -b "$BRANCH"
+          git add -A
+          git commit -m "feat: implement issue #${ISSUE_NUM}
+
+          $(echo "${{ steps.fetch.outputs.issue_title }}")"
+          git push origin "$BRANCH"
+
+          gh pr create \
+            --title "feat: implement #${ISSUE_NUM} — ${{ steps.fetch.outputs.issue_title }}" \
+            --body "Closes #${ISSUE_NUM}
+
+          Automatically implemented by Claude Code based on the approved triage." \
+            --base master \
+            --head "$BRANCH"
             Keep changes minimal and focused on the issue.
