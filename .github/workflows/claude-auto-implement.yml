@@ -1,0 +1,46 @@
+name: "Claude Code: Auto-implement feedback"
+
+on:
+  issues:
+    types: [opened, labeled]
+
+jobs:
+  implement-feedback:
+    # Only run on issues with actionable labels from the feedback tool
+    if: |
+      contains(github.event.issue.labels.*.name, 'enhancement') ||
+      contains(github.event.issue.labels.*.name, 'bug') ||
+      contains(github.event.issue.labels.*.name, 'game-balance')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run Claude Code
+        uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          model: "claude-sonnet-4-20250514"
+          direct_prompt: |
+            You are working on "Amber Republic" — a political simulation game for Latvia built with React + TypeScript + Vite + Tailwind.
+
+            GitHub Issue #${{ github.event.issue.number }}: "${{ github.event.issue.title }}"
+
+            ${{ github.event.issue.body }}
+
+            INSTRUCTIONS:
+            1. Read the relevant source files to understand the codebase
+            2. Implement the requested change (bug fix, feature, or balance adjustment)
+            3. The game engine is in src/engine/, events in src/data/, UI in src/ui/
+            4. For balance issues, adjust effect deltas in event files
+            5. For bugs, fix the issue in the relevant component
+            6. For features, add new code following existing patterns
+            7. Run `npm install && npm run build` to verify no errors
+            8. Commit with a clear message referencing the issue number
+
+            Keep changes minimal and focused on the issue.
+          allowed_tools: "Bash,Read,Write,Edit"
