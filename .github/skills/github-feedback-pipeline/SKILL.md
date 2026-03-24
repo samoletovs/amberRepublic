@@ -114,15 +114,20 @@ Read `references/workflow-auto-label.yml` and copy it to `.github/workflows/auto
 
 Adjust the emoji-to-label mapping if you changed the feedback categories in Step 2.
 
-### Step 5: Add the Claude triage + implement workflow
+### Step 5: Add the Claude triage + implement workflows
 
-Read `references/workflow-claude-implement.yml` and copy it to `.github/workflows/claude-implement.yml`.
+Read `references/workflow-claude-implement.yml` and copy it to `.github/workflows/claude-triage.yml`.
+Read `references/workflow-implement.yml` and copy it to `.github/workflows/claude-implement.yml`.
 
-Customize the `prompt` field to reference the project's `CLAUDE.md` and include project-specific context.
+These are two separate workflows connected by `repository_dispatch`:
+1. **Triage** (`claude-triage.yml`) — auto-labels, evaluates the issue, adds approval label.
+   If approved, fires a `repository_dispatch` event to trigger implementation.
+2. **Implement** (`claude-implement.yml`) — runs Claude Code to create a PR.
+   Also responds to `@claude` comments for manual triggering.
 
-The workflow contains two jobs:
-1. **triage** — evaluates the issue against quality criteria, posts a comment, adds a label
-2. **implement** — only runs for `approved` issues, creates a PR
+They must be separate because GitHub Actions does not re-trigger workflows when
+labels or comments are added by `GITHUB_TOKEN` (anti-loop protection). The
+`repository_dispatch` event bridges this gap.
 
 ### Step 6: Create GitHub labels
 

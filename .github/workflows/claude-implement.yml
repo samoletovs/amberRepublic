@@ -1,0 +1,52 @@
+name: "Claude: Implement approved issue"
+
+on:
+  repository_dispatch:
+    types: [implement-issue]
+  issue_comment:
+    types: [created]
+
+jobs:
+  implement:
+    # Run when dispatched from triage OR when someone comments @claude
+    if: >-
+      github.event_name == 'repository_dispatch' ||
+      (github.event_name == 'issue_comment' &&
+       contains(github.event.comment.body, '@claude'))
+    runs-on: ubuntu-latest
+    concurrency:
+      group: claude-implement-${{ github.event.client_payload.issue_number || github.event.issue.number }}
+      cancel-in-progress: true
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set issue number
+        id: issue
+        run: |
+          if [ "${{ github.event_name }}" = "repository_dispatch" ]; then
+            echo "number=${{ github.event.client_payload.issue_number }}" >> $GITHUB_OUTPUT
+          else
+            echo "number=${{ github.event.issue.number }}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Implement with Claude
+        uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          trigger_phrase: "@claude"
+          label_trigger: "approved"
+          prompt: |
+            Read CLAUDE.md for the full architecture guide before making any changes.
+            This is "Amber Republic" — a political simulation game for Latvia built with React + TypeScript + Vite + Tailwind.
+            The game engine is in src/engine/, events in src/data/, UI in src/ui/.
+            For balance issues, adjust effect deltas in event files.
+            For bugs, fix the issue in the relevant component.
+            For features, add new code following existing patterns.
+            Run `npm install && npm run build` to verify no errors before finishing.
+            Keep changes minimal and focused on the issue.
