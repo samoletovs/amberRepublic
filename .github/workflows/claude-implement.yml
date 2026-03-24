@@ -41,6 +41,7 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           trigger_phrase: "@claude"
           label_trigger: "approved"
+          allowed_bots: "github-actions[bot]"
           prompt: |
             Read CLAUDE.md for the full architecture guide before making any changes.
             This is "Amber Republic" — a political simulation game for Latvia built with React + TypeScript + Vite + Tailwind.

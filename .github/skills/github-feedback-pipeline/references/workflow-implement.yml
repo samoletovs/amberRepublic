@@ -44,6 +44,7 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           trigger_phrase: "@claude"
           label_trigger: "approved"
+          allowed_bots: "github-actions[bot]"
           prompt: |
             Read CLAUDE.md for the full architecture guide before making any changes.
             Keep changes minimal and focused on the issue.
