@@ -6,8 +6,9 @@ import { ALL_EVENTS } from './data';
 import TitleScreen from './ui/TitleScreen';
 import GameScreen from './ui/GameScreen';
 import GameOverScreen from './ui/GameOverScreen';
+import ElectionScreen from './ui/ElectionScreen';
 
-type Screen = 'title' | 'game' | 'gameover';
+type Screen = 'title' | 'game' | 'election' | 'gameover';
 
 export default function App() {
   const [screen, setScreen] = useState<Screen>('title');
@@ -44,6 +45,11 @@ export default function App() {
     const newState = resolveTurn(gameState, choiceEntries);
     setGameState(newState);
 
+    if (newState.electionPending) {
+      setScreen('election');
+      return;
+    }
+
     if (newState.gameOver) {
       setScreen('gameover');
       return;
@@ -53,6 +59,22 @@ export default function App() {
     setCurrentEvents(events);
     setDecisions(new Map());
   }, [gameState, currentEvents, decisions]);
+
+  const handleContinueAfterElection = useCallback(() => {
+    if (!gameState) return;
+    const clearedState = { ...gameState, electionPending: false };
+    setGameState(clearedState);
+
+    if (clearedState.gameOver) {
+      setScreen('gameover');
+      return;
+    }
+
+    const { events } = startTurn(clearedState, ALL_EVENTS);
+    setCurrentEvents(events);
+    setDecisions(new Map());
+    setScreen('game');
+  }, [gameState]);
 
   const handleRestart = useCallback(() => {
     setScreen('title');
@@ -72,6 +94,9 @@ export default function App() {
           onMakeChoice={handleMakeChoice}
           onEndTurn={handleEndTurn}
         />
+      )}
+      {screen === 'election' && gameState && gameState.lastElectionResult && (
+        <ElectionScreen state={gameState} onContinue={handleContinueAfterElection} />
       )}
       {screen === 'gameover' && gameState && (
         <GameOverScreen state={gameState} onRestart={handleRestart} />

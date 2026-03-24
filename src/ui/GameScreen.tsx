@@ -32,7 +32,7 @@ export default function GameScreen({ state, events, decisions, onMakeChoice, onE
             <div className="min-w-0">
               <h1 className="text-sm sm:text-lg font-bold truncate" style={{ color: '#9E3039' }}>Amber Republic</h1>
               <p className="text-[10px] sm:text-xs" style={{ color: '#78716C' }}>
-                {QUARTER_NAMES[state.quarter - 1]} {state.year} • Turn {state.turn + 1}/40
+                {QUARTER_NAMES[state.quarter - 1]} {state.year} • {state.parliament.nextElectionTurn - state.turn}Q until election
               </p>
             </div>
           </div>
@@ -49,12 +49,12 @@ export default function GameScreen({ state, events, decisions, onMakeChoice, onE
               <div className="font-data font-bold text-lg" style={{ color: '#1C1917' }}>€{state.indicators.gdp.toFixed(1)}B</div>
               <div className="text-xs" style={{ color: '#78716C' }}>GDP</div>
             </div>
-            <div className="w-16 sm:w-32 h-1.5 sm:h-2 rounded-full overflow-hidden" style={{ background: 'rgba(28,25,23,0.08)' }} title="Turns remaining">
-              <div 
+            <div className="w-16 sm:w-32 h-1.5 sm:h-2 rounded-full overflow-hidden" style={{ background: 'rgba(28,25,23,0.08)' }} title="Term progress">
+              <div
                 className="h-full rounded-full transition-all duration-500"
-                style={{ 
-                  width: `${((40 - state.turn) / 40) * 100}%`,
-                  background: state.turn > 30 ? '#DC2626' : '#9E3039',
+                style={{
+                  width: `${((16 - (state.parliament.nextElectionTurn - state.turn)) / 16) * 100}%`,
+                  background: (state.parliament.nextElectionTurn - state.turn) <= 4 ? '#DC2626' : '#9E3039',
                 }}
               />
             </div>

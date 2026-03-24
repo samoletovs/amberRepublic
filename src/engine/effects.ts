@@ -187,8 +187,10 @@ export function checkGameOver(state: GameState): GameState {
   if (ind.gdp < 18) {
     return { ...state, gameOver: true, gameOverReason: 'The economy has contracted beyond recovery. Latvia enters a decade-long depression. History books will call this "The Second Lost Decade."' };
   }
-  if (state.turn >= 40) { // 10 years
-    return { ...state, gameOver: true, gameOverReason: 'Your decade in power has ended. Latvia continues — shaped by your decisions. The question is: did you leave it better than you found it?' };
+  // Victory: won 2 consecutive elections = completed 2 terms (~8 years)
+  const wonElections = state.parliament.electionHistory.filter(e => e.won);
+  if (wonElections.length >= 2) {
+    return { ...state, gameOver: true, gameOverReason: 'You have won two consecutive Saeima elections and completed two full terms in government. Latvia\'s fate is now in the hands of your successors. History will judge your legacy.' };
   }
 
   return state;

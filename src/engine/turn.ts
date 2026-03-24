@@ -89,6 +89,7 @@ export function resolveTurn(
     const { parliament: newParl, result } = runElection(newState.parliament, newState.indicators, newState.turn, newState.year, elRng);
     newState.parliament = newParl;
     newState.electionPending = true;
+    newState.lastElectionResult = result;
     if (!result.won) {
       newState.gameOver = true;
       newState.gameOverReason = `Election defeat! Your coalition won only ${getCoalitionSeats(newParl)} seats — not enough to govern. The opposition forms a new government. Your time as leader is over.`;
