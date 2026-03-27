@@ -14,8 +14,19 @@ import RealityDashboard from './ui/RealityDashboard';
 
 type Screen = 'title' | 'game' | 'gameover' | 'quiz' | 'budget' | 'reality';
 
+// Screens that can be navigated to via URL hash
+const HASH_SCREENS: Record<string, Screen> = {
+  '#quiz': 'quiz',
+  '#reality': 'reality',
+  '#game': 'game',
+};
+
+function getScreenFromHash(): Screen {
+  return HASH_SCREENS[window.location.hash] || 'title';
+}
+
 export default function App() {
-  const [screen, setScreen] = useState<Screen>('title');
+  const [screen, setScreenRaw] = useState<Screen>(getScreenFromHash);
   const [gameState, setGameState] = useState<GameState | null>(null);
   const [currentEvents, setCurrentEvents] = useState<GameEvent[]>([]);
   const [decisions, setDecisions] = useState<Map<string, number>>(new Map());
@@ -24,6 +35,28 @@ export default function App() {
   const [selectedModel, setSelectedModel] = useState<string | undefined>();
   const [aiLoading, setAiLoading] = useState(false);
   const [pendingState, setPendingState] = useState<GameState | null>(null);
+
+  // Wrap setScreen to also push browser history
+  const setScreen = useCallback((next: Screen) => {
+    setScreenRaw(next);
+    const hash = Object.entries(HASH_SCREENS).find(([, v]) => v === next)?.[0] || '';
+    if (next === 'title') {
+      // Remove hash when going home
+      if (window.location.hash) window.history.pushState(null, '', window.location.pathname);
+    } else if (hash) {
+      window.history.pushState(null, '', hash);
+    }
+  }, []);
+
+  // Listen for browser back/forward button
+  useEffect(() => {
+    const handlePop = () => {
+      const s = getScreenFromHash();
+      setScreenRaw(s);
+    };
+    window.addEventListener('popstate', handlePop);
+    return () => window.removeEventListener('popstate', handlePop);
+  }, []);
 
   // Check available AI models on mount
   useEffect(() => {
