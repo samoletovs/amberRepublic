@@ -9,10 +9,30 @@ export interface TurnResult {
   events: GameEvent[];
 }
 
+/** How many quarters until next election (0 = election turn) */
+export function turnsUntilElection(state: GameState): number {
+  return Math.max(0, state.parliament.nextElectionTurn - state.turn);
+}
+
+/** Campaign season: 1 = early campaign (3Q before), 2 = late campaign (1Q before), 0 = not campaign */
+export function getCampaignSeason(state: GameState): number {
+  const remaining = turnsUntilElection(state);
+  if (remaining <= 1) return 2; // intense final stretch
+  if (remaining <= 3) return 1; // early campaign
+  return 0;
+}
+
 /** Start a new turn: select events to present to the player */
 export function startTurn(state: GameState, allEvents: GameEvent[]): TurnResult {
   const rng = createRng(state.seed + state.turn * 7919);
-  const events = selectEvents(state, allEvents, rng, 2);
+  
+  // Inject virtual campaignSeason indicator for election event preconditions
+  const campaign = getCampaignSeason(state);
+  const stateWithCampaign = campaign > 0
+    ? { ...state, indicators: { ...state.indicators, campaignSeason: campaign } }
+    : state;
+  
+  const events = selectEvents(stateWithCampaign, allEvents, rng, 2);
   return { state, events };
 }
 
@@ -89,6 +109,7 @@ export function resolveTurn(
     const { parliament: newParl, result } = runElection(newState.parliament, newState.indicators, newState.turn, newState.year, elRng);
     newState.parliament = newParl;
     newState.electionPending = true;
+    newState.lastElectionResult = result;
     if (!result.won) {
       newState.gameOver = true;
       newState.gameOverReason = `Election defeat! Your coalition won only ${getCoalitionSeats(newParl)} seats — not enough to govern. The opposition forms a new government. Your time as leader is over.`;
