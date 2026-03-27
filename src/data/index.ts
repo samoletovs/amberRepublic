@@ -4,6 +4,7 @@ import { securityEvents } from './security-events';
 import { societyEvents } from './society-events';
 import { diplomacyEvents, scienceEvents, crisisEvents } from './diplomacy-science-events';
 import { extraEvents } from './extra-events';
+import { regionalEvents, tradeEvents, crimeEvents, seasonalEvents } from './csp-events';
 
 export const ALL_EVENTS: GameEvent[] = [
   ...economyEvents,
@@ -13,4 +14,8 @@ export const ALL_EVENTS: GameEvent[] = [
   ...scienceEvents,
   ...crisisEvents,
   ...extraEvents,
+  ...regionalEvents,
+  ...tradeEvents,
+  ...crimeEvents,
+  ...seasonalEvents,
 ];

@@ -4,11 +4,15 @@ import { createInitialState } from './engine/state';
 import { startTurn, resolveTurn } from './engine/turn';
 import { ALL_EVENTS } from './data';
 import { generateAIEvent, evaluateCustomChoice, getAvailableModels, type AIModel } from './engine/ai';
+import { fetchDynamicStartData, fetchHistoricalData, type HistoricalScenario, HISTORICAL_SCENARIOS } from './engine/latviaData';
 import TitleScreen from './ui/TitleScreen';
 import GameScreen from './ui/GameScreen';
 import GameOverScreen from './ui/GameOverScreen';
+import QuizScreen from './ui/QuizScreen';
+import BudgetScreen from './ui/BudgetScreen';
+import RealityDashboard from './ui/RealityDashboard';
 
-type Screen = 'title' | 'game' | 'gameover';
+type Screen = 'title' | 'game' | 'gameover' | 'quiz' | 'budget' | 'reality';
 
 export default function App() {
   const [screen, setScreen] = useState<Screen>('title');
@@ -19,6 +23,7 @@ export default function App() {
   const [aiModels, setAiModels] = useState<AIModel[]>([]);
   const [selectedModel, setSelectedModel] = useState<string | undefined>();
   const [aiLoading, setAiLoading] = useState(false);
+  const [pendingState, setPendingState] = useState<GameState | null>(null);
 
   // Check available AI models on mount
   useEffect(() => {
@@ -50,14 +55,69 @@ export default function App() {
     return staticEvents;
   }, [aiMode, aiModels, selectedModel]);
 
-  const handleStartGame = useCallback(async () => {
+  const handleStartGame = useCallback(async (scenario?: HistoricalScenario) => {
     const state = createInitialState();
+
+    // Fetch real data to override starting conditions
+    try {
+      const overrides = scenario
+        ? await fetchHistoricalData(scenario.year)
+        : await fetchDynamicStartData();
+      for (const [key, value] of Object.entries(overrides)) {
+        if (value != null) state.indicators[key] = value;
+      }
+      if (scenario) {
+        state.year = scenario.year;
+      }
+    } catch {
+      // Fall back to hardcoded values
+    }
+
+    setPendingState(state);
+    setScreen('budget');
+  }, []);
+
+  const handleBudgetAllocate = useCallback(async (allocations: Record<string, number>) => {
+    const state = pendingState;
+    if (!state) return;
+
+    // Map budget allocations to game indicator effects
+    const budgetMap: Record<string, { indicator: string; scale: number }> = {
+      GF02: { indicator: 'militaryReadiness', scale: 0.005 },
+      GF03: { indicator: 'borderSecurity', scale: 0.004 },
+      GF07: { indicator: 'healthcareQuality', scale: 0.003 },
+      GF09: { indicator: 'educationQuality', scale: 0.003 },
+      GF10: { indicator: 'socialCohesion', scale: 0.001 },
+      GF05: { indicator: 'greenTransition', scale: 0.01 },
+    };
+
+    for (const [code, alloc] of Object.entries(allocations)) {
+      const mapping = budgetMap[code];
+      if (mapping) {
+        // Normalize allocation relative to a baseline (effect = (alloc - baseline) * scale)
+        const baselineEffect = alloc * mapping.scale;
+        state.indicators[mapping.indicator] = Math.max(0, Math.min(100,
+          (state.indicators[mapping.indicator] || 50) + (baselineEffect - 3)
+        ));
+      }
+    }
+
     setGameState(state);
     const events = await generateEvents(state);
     setCurrentEvents(events);
     setDecisions(new Map());
     setScreen('game');
-  }, [generateEvents]);
+  }, [pendingState, generateEvents]);
+
+  const handleBudgetSkip = useCallback(async () => {
+    const state = pendingState;
+    if (!state) return;
+    setGameState(state);
+    const events = await generateEvents(state);
+    setCurrentEvents(events);
+    setDecisions(new Map());
+    setScreen('game');
+  }, [pendingState, generateEvents]);
 
   const handleMakeChoice = useCallback((eventId: string, choiceIndex: number) => {
     setDecisions(prev => {
@@ -142,9 +202,25 @@ export default function App() {
     setDecisions(new Map());
   }, []);
 
+  const handleQuiz = useCallback(() => {
+    setScreen('quiz');
+  }, []);
+
   return (
     <div className="min-h-screen">
-      {screen === 'title' && <TitleScreen onStart={handleStartGame} />}
+      {screen === 'title' && (
+        <TitleScreen
+          onStart={handleStartGame}
+          onQuiz={handleQuiz}
+          onReality={() => setScreen('reality')}
+          scenarios={HISTORICAL_SCENARIOS}
+        />
+      )}
+      {screen === 'quiz' && <QuizScreen onBack={handleRestart} />}
+      {screen === 'budget' && (
+        <BudgetScreen onAllocate={handleBudgetAllocate} onSkip={handleBudgetSkip} />
+      )}
+      {screen === 'reality' && <RealityDashboard />}
       {screen === 'game' && gameState && (
         <GameScreen
           state={gameState}

@@ -83,3 +83,54 @@ export interface IndicatorMeta {
   max: number;
   goodDirection: 'up' | 'down' | 'neutral';
 }
+
+// ─── Quiz Types ──────────────────────────────────────────────────
+export interface QuizQuestion {
+  id: string;
+  text: string;
+  hint: string;
+  category: 'demographics' | 'economy' | 'employment' | 'society';
+  emoji: string;
+  correctValue: number;
+  unit: string;
+  period: string;
+  source: string;
+  options: number[];
+  funFact?: string;
+}
+
+export interface QuizState {
+  questions: QuizQuestion[];
+  currentIndex: number;
+  answers: QuizAnswer[];
+  score: number;
+  finished: boolean;
+  loading: boolean;
+}
+
+export interface QuizAnswer {
+  questionId: string;
+  selectedValue: number;
+  correct: boolean;
+  timeTaken: number;
+}
+
+// ─── Reality Check Types ─────────────────────────────────────────
+export interface RealStat {
+  key: string;
+  value: number;
+  unit: string;
+  label: string;
+  period: string;
+}
+
+export interface RealityComparison {
+  indicatorKey: string;
+  indicatorName: string;
+  emoji: string;
+  gameValue: number;
+  realValue: number;
+  unit: string;
+  period: string;
+  divergence: 'close' | 'moderate' | 'far';
+}

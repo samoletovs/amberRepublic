@@ -2,6 +2,7 @@ import { GameState } from '../engine/types';
 import { INDICATORS, getIndicatorMeta } from '../engine/indicators';
 import { createInitialState } from '../engine/state';
 import FeedbackButton from './FeedbackButton';
+import BeatReality from './BeatReality';
 
 interface Props {
   state: GameState;
@@ -92,6 +93,9 @@ export default function GameOverScreen({ state, onRestart }: Props) {
             })}
           </div>
         </div>
+
+        {/* Beat Reality comparison */}
+        <BeatReality state={state} />
 
         {/* Fun epilogue */}
         <div className="glass-card p-6 mb-6">

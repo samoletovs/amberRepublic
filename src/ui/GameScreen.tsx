@@ -7,6 +7,9 @@ import EventCard from './EventCard';
 import FeedbackButton from './FeedbackButton';
 import RatingsBar from './RatingsBar';
 import CoalitionBar from './CoalitionBar';
+import RealityCheck from './RealityCheck';
+import NewsTicker from './NewsTicker';
+import PopulationPyramid from './PopulationPyramid';
 
 interface Props {
   state: GameState;
@@ -101,6 +104,9 @@ export default function GameScreen({ state, events, decisions, onMakeChoice, onE
         )}
       </header>
 
+      {/* News Ticker — real CSP data briefings */}
+      <NewsTicker />
+
       {/* Mobile indicators toggle */}
       <button
         onClick={() => setShowIndicators(!showIndicators)}
@@ -114,6 +120,12 @@ export default function GameScreen({ state, events, decisions, onMakeChoice, onE
         {/* Left: Indicators */}
         <aside className={`lg:w-80 shrink-0 ${showIndicators ? 'block' : 'hidden lg:block'}`}>
           <IndicatorPanel state={state} />
+          <div className="mt-3">
+            <RealityCheck state={state} />
+          </div>
+          <div className="mt-3">
+            <PopulationPyramid />
+          </div>
         </aside>
 
         {/* Center: Events & Decisions */}
