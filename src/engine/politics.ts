@@ -266,9 +266,10 @@ export function runElection(parliament: Parliament, indicators: Record<string, n
 
 /** Calculate international ratings from indicators */
 export function calculateRatings(indicators: Record<string, number>): InternationalRatings {
-  const { gdp, gdpGrowth, publicDebt, unemployment, inflation, foreignInvestment,
+  const { gdp, gdpGrowth, publicDebt, unemployment, _inflation, foreignInvestment,
     corruptionLevel, publicHappiness, educationQuality, healthcareQuality,
     mediaTrust, socialCohesion, population } = indicators;
+  void _inflation; // extracted from indicators for potential future use
 
   // S&P-style: based on debt, growth, investment
   const creditScore = (100 - publicDebt) * 0.3 + gdpGrowth * 5 + foreignInvestment * 0.2 + (100 - unemployment) * 0.1;

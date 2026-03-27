@@ -236,10 +236,10 @@ export async function generateQuizQuestions(count: number = 8): Promise<QuizQues
   const questions: QuizQuestion[] = [];
   for (const template of selected) {
     const stat = stats[template.statKey];
-    if (!stat || stat.value == null) continue;
+    if (!stat || stat.value === null || stat.value === undefined) continue;
 
     let displayValue = stat.value;
-    let options = template.generateOptions(stat.value);
+    const options = template.generateOptions(stat.value);
 
     // Special handling for GDP — convert from thousands to billions
     if (template.statKey === 'gdp') {

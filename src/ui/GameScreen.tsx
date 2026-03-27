@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { GameState, GameEvent } from '../engine/types';
-import { INDICATORS, getIndicatorMeta } from '../engine/indicators';
+import { getIndicatorMeta } from '../engine/indicators';
 import type { AIModel } from '../engine/ai';
 import IndicatorPanel from './IndicatorPanel';
 import EventCard from './EventCard';

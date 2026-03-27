@@ -85,7 +85,7 @@ export default function BeatReality({ state }: Props) {
       real: latestReal.unemployment,
       better: (g: number, r: number) => g < r,
     },
-  ].filter(c => c.game != null && c.real != null);
+  ].filter(c => c.game !== null && c.game !== undefined && c.real !== null && c.real !== undefined);
 
   const wins = comparisons.filter(c => c.better(c.game!, c.real!)).length;
   const verdict = wins >= 2 ? { text: 'You beat reality!', color: '#16A34A', emoji: '🏆' }
