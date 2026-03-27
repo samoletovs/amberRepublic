@@ -220,7 +220,7 @@ export default function App() {
       {screen === 'budget' && (
         <BudgetScreen onAllocate={handleBudgetAllocate} onSkip={handleBudgetSkip} />
       )}
-      {screen === 'reality' && <RealityDashboard />}
+      {screen === 'reality' && <RealityDashboard onBack={handleRestart} />}
       {screen === 'game' && gameState && (
         <GameScreen
           state={gameState}

@@ -26,10 +26,30 @@ interface RealityData {
 
 const API_BASE = '/api';
 
-export default function RealityDashboard() {
+const LATVIA_FACTS = [
+  { emoji: '🏰', text: 'Riga is home to the largest collection of Art Nouveau buildings in the world — over 800 buildings in the city center.' },
+  { emoji: '🌲', text: 'Latvia is one of the greenest countries in Europe — forests cover about 54% of the territory.' },
+  { emoji: '📡', text: 'Latvia has one of the fastest internet speeds in the world, consistently ranking in the top 10 globally.' },
+  { emoji: '🎵', text: 'The Latvian Song and Dance Festival, held every 5 years, gathers over 40,000 performers and is a UNESCO masterpiece.' },
+  { emoji: '🏖️', text: 'Latvia has over 500 km of white sandy coastline along the Baltic Sea and the Gulf of Riga.' },
+  { emoji: '🦅', text: 'Latvia is home to one of the largest populations of white storks in Europe — symbol of luck and fertility.' },
+  { emoji: '🍺', text: 'Riga Black Balsam (Rīgas Melnais balzams) has been produced since 1752 — one of the oldest herbal liqueurs in Europe.' },
+  { emoji: '🗳️', text: 'Latvia restored its independence in 1991 through a \"Singing Revolution\" — mass protests and folk singing, not violence.' },
+  { emoji: '📚', text: 'Latvia has one of the highest literacy rates in the world at 99.9%, and one of the highest numbers of libraries per capita.' },
+  { emoji: '🌍', text: 'Latvia is at the geographic center of the Baltic states, and Riga was the largest city in the former Russian Empire after Moscow and St. Petersburg.' },
+  { emoji: '⚡', text: 'Latvia generates about 40% of its electricity from renewable sources, primarily hydropower from the Daugava river.' },
+  { emoji: '🎄', text: 'Riga claims to have the first ever decorated Christmas tree in history (1510), though Tallinn disputes this.' },
+];
+
+interface Props {
+  onBack: () => void;
+}
+
+export default function RealityDashboard({ onBack }: Props) {
   const [data, setData] = useState<RealityData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [factIndex, setFactIndex] = useState(() => Math.floor(Math.random() * LATVIA_FACTS.length));
 
   useEffect(() => {
     let cancelled = false;
@@ -88,6 +108,12 @@ export default function RealityDashboard() {
   return (
     <div className="reality-dashboard" style={styles.container}>
       <div style={styles.header}>
+        <button
+          onClick={onBack}
+          style={{ ...styles.retryButton, background: 'transparent', color: '#9E3039', border: '1px solid #9E3039', marginBottom: '1rem' }}
+        >
+          ← Back to Main Menu
+        </button>
         <h1 style={styles.title}>🇱🇻 Latvia Right Now</h1>
         <p style={styles.subtitle}>
           Live data from public APIs — the real world your simulation is based on
@@ -192,6 +218,21 @@ export default function RealityDashboard() {
             A <a href="https://naurolabs.com" style={styles.link}>NauroLabs</a> experiment
           </p>
         </div>
+      </div>
+
+      {/* Did You Know? Section */}
+      <div style={{ ...styles.card, marginTop: '1.5rem', textAlign: 'center' as const }}>
+        <h2 style={styles.cardTitle}>💡 Did You Know?</h2>
+        <p style={{ fontSize: '1.5rem', marginBottom: '0.5rem' }}>{LATVIA_FACTS[factIndex].emoji}</p>
+        <p style={{ ...styles.aboutText, fontSize: '1rem', maxWidth: 600, margin: '0 auto 1rem' }}>
+          {LATVIA_FACTS[factIndex].text}
+        </p>
+        <button
+          onClick={() => setFactIndex((factIndex + 1) % LATVIA_FACTS.length)}
+          style={{ ...styles.retryButton, background: '#B8860B' }}
+        >
+          Another fact →
+        </button>
       </div>
     </div>
   );

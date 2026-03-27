@@ -161,10 +161,16 @@ describe('effects — checkGameOver', () => {
     expect(result.gameOver).toBe(true);
   });
 
-  it('returns gameOver at turn 40 (10 years)', () => {
-    const state = makeState({ turn: 40 });
+  it('returns gameOver at turn 80 (20 years / 5 terms max)', () => {
+    const state = makeState({ turn: 80 });
     const result = checkGameOver(state);
     expect(result.gameOver).toBe(true);
+  });
+
+  it('does NOT gameOver at turn 40 (elections decide, not hard limit)', () => {
+    const state = makeState({ turn: 40 });
+    const result = checkGameOver(state);
+    expect(result.gameOver).toBe(false);
   });
 
   it('no gameOver with normal values', () => {
