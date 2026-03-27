@@ -28,7 +28,7 @@ export default function TitleScreen({ onStart, onQuiz, onReality, scenarios }: P
         <p className="text-base sm:text-lg mb-1 font-light tracking-wide uppercase" style={{ color: '#9E3039', fontFamily: 'Source Sans 3, sans-serif', letterSpacing: '0.15em' }}>
           A Political Simulation
         </p>
-        <p className="text-sm mb-8" style={{ color: '#78716C' }}>Latvia, 2025–2035</p>
+        <p className="text-sm mb-8" style={{ color: '#78716C' }}>Latvia, 2025 — Win elections to stay in power</p>
 
         {/* Briefing card */}
         <div className="glass-card p-5 sm:p-6 mb-8 text-left">
@@ -41,7 +41,8 @@ export default function TitleScreen({ onStart, onQuiz, onReality, scenarios }: P
           <p className="text-sm leading-relaxed mb-5" style={{ color: '#3D3731' }}>
             Your coalition has just won the Saeima elections. Latvia faces depopulation,
             a frozen border with Russia, crumbling healthcare, and young people leaving
-            for Dublin. You have 10 years. Every quarter brings new crises and choices.
+            for Dublin. Win elections every 4 years to stay in power — lose the people's trust and it's game over.
+            Every quarter brings new crises and choices.
             International agencies are watching. Your coalition partners are demanding.
           </p>
           <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
@@ -67,7 +68,7 @@ export default function TitleScreen({ onStart, onQuiz, onReality, scenarios }: P
           className="w-full sm:w-auto px-10 py-3.5 rounded-lg text-base font-semibold transition-all duration-200 pulse-amber"
           style={{ background: '#9E3039', color: '#FFFFFF' }}
         >
-          Begin Your Decade in Power
+          Begin Your Term in Office
         </button>
 
         <div className="flex flex-col sm:flex-row gap-2 justify-center mt-3">
@@ -129,7 +130,7 @@ export default function TitleScreen({ onStart, onQuiz, onReality, scenarios }: P
         )}
 
         <p className="text-xs mt-5" style={{ color: '#A8A29E' }}>
-          Each turn = 1 quarter · Elections every 4 years · Coalition politics matter
+          Each turn = 1 quarter · Elections every 4 years · Win to continue, lose = game over
         </p>
       </div>
     </div>

@@ -187,8 +187,12 @@ export function checkGameOver(state: GameState): GameState {
   if (ind.gdp < 18) {
     return { ...state, gameOver: true, gameOverReason: 'The economy has contracted beyond recovery. Latvia enters a decade-long depression. History books will call this "The Second Lost Decade."' };
   }
-  if (state.turn >= 40) { // 10 years
-    return { ...state, gameOver: true, gameOverReason: 'Your decade in power has ended. Latvia continues — shaped by your decisions. The question is: did you leave it better than you found it?' };
+  // No hard turn limit — game continues as long as you win elections.
+  // Elections happen every 16 turns (4 years) via politics.ts.
+  // If you lose an election, game ends via runElection() in turn.ts.
+  // Maximum 5 terms (20 years) as a soft cap for extremely successful players.
+  if (state.turn >= 80) {
+    return { ...state, gameOver: true, gameOverReason: 'After 20 extraordinary years, you step down voluntarily. Latvia is transformed — your legacy is secure. Future generations will study your decisions in university courses. The "Amber Era" enters the history books.' };
   }
 
   return state;
