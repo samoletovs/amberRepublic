@@ -11,8 +11,9 @@ import GameOverScreen from './ui/GameOverScreen';
 import QuizScreen from './ui/QuizScreen';
 import BudgetScreen from './ui/BudgetScreen';
 import RealityDashboard from './ui/RealityDashboard';
+import ElectionResultsScreen from './ui/ElectionResultsScreen';
 
-type Screen = 'title' | 'game' | 'gameover' | 'quiz' | 'budget' | 'reality';
+type Screen = 'title' | 'game' | 'gameover' | 'quiz' | 'budget' | 'reality' | 'election';
 
 // Screens that can be navigated to via URL hash
 const HASH_SCREENS: Record<string, Screen> = {
@@ -223,6 +224,12 @@ export default function App() {
       return;
     }
 
+    // Show election results if an election just happened and player won
+    if (newState.electionPending && newState.lastElectionResult) {
+      setScreen('election');
+      return;
+    }
+
     const events = await generateEvents(newState);
     setCurrentEvents(events);
     setDecisions(new Map());
@@ -234,6 +241,17 @@ export default function App() {
     setCurrentEvents([]);
     setDecisions(new Map());
   }, []);
+
+  const handleElectionContinue = useCallback(async () => {
+    if (!gameState) return;
+    // Clear election pending flag and continue
+    const updatedState = { ...gameState, electionPending: false, lastElectionResult: undefined };
+    setGameState(updatedState);
+    const events = await generateEvents(updatedState);
+    setCurrentEvents(events);
+    setDecisions(new Map());
+    setScreen('game');
+  }, [gameState, generateEvents]);
 
   const handleQuiz = useCallback(() => {
     setScreen('quiz');
@@ -272,6 +290,13 @@ export default function App() {
       )}
       {screen === 'gameover' && gameState && (
         <GameOverScreen state={gameState} onRestart={handleRestart} />
+      )}
+      {screen === 'election' && gameState && gameState.lastElectionResult && (
+        <ElectionResultsScreen
+          state={gameState}
+          result={gameState.lastElectionResult}
+          onContinue={handleElectionContinue}
+        />
       )}
     </div>
   );

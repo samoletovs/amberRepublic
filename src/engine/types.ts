@@ -1,4 +1,4 @@
-import type { Parliament, InternationalRatings } from './politics';
+import type { Parliament, InternationalRatings, ElectionResult } from './politics';
 
 // ─── Core Game Types ─────────────────────────────────────────────
 export interface GameState {
@@ -16,6 +16,7 @@ export interface GameState {
   parliament: Parliament;
   ratings: InternationalRatings;
   electionPending?: boolean;
+  lastElectionResult?: ElectionResult;
 }
 
 export interface ScheduledEffect {

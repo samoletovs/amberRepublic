@@ -3,12 +3,15 @@ import { getCoalitionSeats, getCoalitionLoyalty } from '../engine/politics';
 
 interface Props {
   parliament: Parliament;
+  currentTurn: number;
 }
 
-export default function CoalitionBar({ parliament }: Props) {
+export default function CoalitionBar({ parliament, currentTurn }: Props) {
   const coalitionSeats = getCoalitionSeats(parliament);
   const loyalty = getCoalitionLoyalty(parliament);
   const isStable = coalitionSeats >= 51 && loyalty > 30;
+  const turnsUntil = Math.max(0, parliament.nextElectionTurn - currentTurn);
+  const isCampaignSeason = turnsUntil <= 3 && turnsUntil > 0;
 
   return (
     <div className="glass-card p-4 mb-3">
@@ -80,9 +83,27 @@ export default function CoalitionBar({ parliament }: Props) {
 
       {/* Next election */}
       {parliament.nextElectionTurn > 0 && (
-        <p className="text-[10px] mt-2" style={{ color: '#A8A29E' }}>
-          Next election: Q{((parliament.nextElectionTurn % 4) || 4)} {2025 + Math.floor(parliament.nextElectionTurn / 4)}
-        </p>
+        <div className="flex items-center justify-between mt-2 pt-2" style={{ borderTop: '1px solid rgba(28,25,23,0.06)' }}>
+          <p className="text-[10px]" style={{ color: isCampaignSeason ? '#9E3039' : '#A8A29E' }}>
+            {isCampaignSeason ? '🔥 Campaign Season!' : '🗓️ Next election:'}{' '}
+            <span className="font-data font-semibold">
+              {turnsUntil === 0 ? 'This quarter!' : `${turnsUntil} quarter${turnsUntil !== 1 ? 's' : ''} away`}
+            </span>
+          </p>
+          {isCampaignSeason && (
+            <div className="flex gap-0.5">
+              {[3, 2, 1].map(q => (
+                <div
+                  key={q}
+                  className="w-2 h-2 rounded-full"
+                  style={{
+                    background: turnsUntil <= q ? '#9E3039' : 'rgba(28,25,23,0.1)',
+                  }}
+                />
+              ))}
+            </div>
+          )}
+        </div>
       )}
     </div>
   );

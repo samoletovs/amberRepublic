@@ -11,6 +11,8 @@ import RealityCheck from './RealityCheck';
 import NewsTicker from './NewsTicker';
 import PopulationPyramid from './PopulationPyramid';
 
+import { turnsUntilElection } from '../engine/turn';
+
 interface Props {
   state: GameState;
   events: GameEvent[];
@@ -32,6 +34,8 @@ export default function GameScreen({ state, events, decisions, onMakeChoice, onE
   const allDecisionsMade = events.every(e => decisions.has(e.id));
   const lastRecord = state.history[state.history.length - 1];
   const [showIndicators, setShowIndicators] = useState(false);
+  const termNumber = state.parliament.electionHistory.length + 1;
+  const untilElection = turnsUntilElection(state);
 
   return (
     <div className="min-h-screen p-2 sm:p-3 md:p-6 pb-24">
@@ -43,7 +47,7 @@ export default function GameScreen({ state, events, decisions, onMakeChoice, onE
             <div className="min-w-0">
               <h1 className="text-sm sm:text-lg font-bold truncate" style={{ color: '#9E3039' }}>Amber Republic</h1>
               <p className="text-[10px] sm:text-xs" style={{ color: '#78716C' }}>
-                {QUARTER_NAMES[state.quarter - 1]} {state.year} • Turn {state.turn + 1}/40
+                {QUARTER_NAMES[state.quarter - 1]} {state.year} • Term {termNumber} • {untilElection > 0 ? `${untilElection}Q to election` : 'Election!'}
               </p>
             </div>
           </div>
@@ -60,12 +64,12 @@ export default function GameScreen({ state, events, decisions, onMakeChoice, onE
               <div className="font-data font-bold text-lg" style={{ color: '#1C1917' }}>€{state.indicators.gdp.toFixed(1)}B</div>
               <div className="text-xs" style={{ color: '#78716C' }}>GDP</div>
             </div>
-            <div className="w-16 sm:w-32 h-1.5 sm:h-2 rounded-full overflow-hidden" style={{ background: 'rgba(28,25,23,0.08)' }} title="Turns remaining">
+            <div className="w-16 sm:w-32 h-1.5 sm:h-2 rounded-full overflow-hidden" style={{ background: 'rgba(28,25,23,0.08)' }} title={`${untilElection} quarters to next election`}>
               <div 
                 className="h-full rounded-full transition-all duration-500"
                 style={{ 
-                  width: `${((40 - state.turn) / 40) * 100}%`,
-                  background: state.turn > 30 ? '#DC2626' : '#9E3039',
+                  width: `${((16 - untilElection) / 16) * 100}%`,
+                  background: untilElection <= 3 ? '#DC2626' : untilElection <= 6 ? '#B8860B' : '#9E3039',
                 }}
               />
             </div>
@@ -131,7 +135,7 @@ export default function GameScreen({ state, events, decisions, onMakeChoice, onE
         {/* Center: Events & Decisions */}
         <main className="flex-1 space-y-3">
           {/* Coalition & Ratings */}
-          <CoalitionBar parliament={state.parliament} />
+          <CoalitionBar parliament={state.parliament} currentTurn={state.turn} />
           <RatingsBar ratings={state.ratings} />
 
           {/* Previous turn narrative */}
