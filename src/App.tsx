@@ -64,7 +64,7 @@ export default function App() {
         ? await fetchHistoricalData(scenario.year)
         : await fetchDynamicStartData();
       for (const [key, value] of Object.entries(overrides)) {
-        if (value != null) state.indicators[key] = value;
+        if (value !== null && value !== undefined) state.indicators[key] = value;
       }
       if (scenario) {
         state.year = scenario.year;

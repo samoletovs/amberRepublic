@@ -236,7 +236,7 @@ export async function generateNewsBriefings(): Promise<NewsBriefing[]> {
         source: 'CSP',
       });
     }
-    if (stats.netMigration?.value != null) {
+    if (stats.netMigration?.value !== null && stats.netMigration?.value !== undefined) {
       const net = stats.netMigration.value;
       briefings.push({
         text: `Net migration: ${net > 0 ? '+' : ''}${net.toLocaleString()} people ${net > 0 ? 'arrived' : 'left'}`,

@@ -84,10 +84,10 @@ export async function getRealityComparisons(state: GameState): Promise<RealityCo
 
   for (const mapping of INDICATOR_MAPPINGS) {
     const real = realStats[mapping.statKey];
-    if (!real || real.value == null) continue;
+    if (!real || real.value === null || real.value === undefined) continue;
 
     const gameValue = state.indicators[mapping.gameKey];
-    if (gameValue == null) continue;
+    if (gameValue === null || gameValue === undefined) continue;
 
     const realConverted = mapping.convert(real.value);
     const indicator = INDICATORS.find(i => i.key === mapping.gameKey);
