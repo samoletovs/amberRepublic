@@ -110,6 +110,17 @@ h1, h2, h3, h4 {
 * { -webkit-tap-highlight-color: transparent; }
 ::selection { background: rgba(158, 48, 57, 0.15); }
 
+/* ── Skeleton loading ─────────────────────────── */
+.skeleton-pulse {
+  background: linear-gradient(90deg, rgba(28,25,23,0.06) 25%, rgba(28,25,23,0.10) 37%, rgba(28,25,23,0.06) 63%);
+  background-size: 200% 100%;
+  animation: skeletonPulse 1.4s ease-in-out infinite;
+}
+@keyframes skeletonPulse {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
 ::-webkit-scrollbar { width: 5px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: rgba(28, 25, 23, 0.1); border-radius: 3px; }
