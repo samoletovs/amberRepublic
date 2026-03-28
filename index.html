@@ -12,7 +12,71 @@
   <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,600;0,700;1,400&family=Source+Sans+3:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 </head>
 <body>
-  <div id="root"></div>
+  <div id="root">
+    <!-- Loading spinner shown before React mounts -->
+    <div id="app-loader" style="
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: #F5F0E8;
+      font-family: 'Source Sans 3', system-ui, sans-serif;
+      gap: 20px;
+    ">
+      <style>
+        @keyframes ar-spin {
+          to { transform: rotate(360deg); }
+        }
+        @keyframes ar-fade-in {
+          from { opacity: 0; transform: translateY(6px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+        #app-loader { animation: ar-fade-in 0.3s ease both; }
+        #ar-spinner {
+          width: 44px;
+          height: 44px;
+          border: 3px solid rgba(158, 48, 57, 0.15);
+          border-top-color: #9E3039;
+          border-radius: 50%;
+          animation: ar-spin 0.9s linear infinite;
+        }
+        #ar-flag {
+          display: flex;
+          gap: 4px;
+          margin-bottom: 4px;
+        }
+        #ar-flag span:nth-child(1), #ar-flag span:nth-child(3) {
+          display: block; width: 48px; height: 3px;
+          background: #9E3039; border-radius: 2px;
+        }
+        #ar-flag span:nth-child(2) {
+          display: block; width: 24px; height: 3px;
+          background: #fff; border-radius: 2px;
+        }
+        #ar-title {
+          font-family: 'Lora', Georgia, serif;
+          font-size: 1.6rem;
+          font-weight: 700;
+          color: #1C1917;
+          letter-spacing: -0.01em;
+          margin: 0;
+        }
+        #ar-subtitle {
+          font-size: 0.7rem;
+          font-weight: 500;
+          letter-spacing: 0.14em;
+          text-transform: uppercase;
+          color: #9E3039;
+          margin: 0;
+        }
+      </style>
+      <div id="ar-flag"><span></span><span></span><span></span></div>
+      <p id="ar-title">Amber Republic</p>
+      <p id="ar-subtitle">Loading…</p>
+      <div id="ar-spinner"></div>
+    </div>
+  </div>
   <script type="module" src="/src/main.tsx"></script>
 </body>
 </html>
