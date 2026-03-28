@@ -4,6 +4,7 @@ import { createInitialState } from './engine/state';
 import { startTurn, resolveTurn } from './engine/turn';
 import { ALL_EVENTS } from './data';
 import { generateAIEvent, evaluateCustomChoice, getAvailableModels, type AIModel } from './engine/ai';
+import { saveAIEventToCache, pickCachedAIEvent } from './engine/aiEventCache';
 import { fetchDynamicStartData, fetchHistoricalData, type HistoricalScenario, HISTORICAL_SCENARIOS } from './engine/latviaData';
 import TitleScreen from './ui/TitleScreen';
 import GameScreen from './ui/GameScreen';
@@ -21,6 +22,9 @@ const HASH_SCREENS: Record<string, Screen> = {
   '#reality': 'reality',
   '#game': 'game',
 };
+
+/** Number of recent turns to check when avoiding duplicate event titles. */
+const RECENT_HISTORY_WINDOW = 5;
 
 function getScreenFromHash(): Screen {
   return HASH_SCREENS[window.location.hash] || 'title';
@@ -75,6 +79,16 @@ export default function App() {
     }
 
     // Hybrid: 1 static + 1 AI-generated event
+    // First, try to reuse a previously cached AI event to avoid an API call.
+    const recentTitles = state.history
+      .slice(-RECENT_HISTORY_WINDOW)
+      .flatMap(h => h.events.map(e => e.event.title));
+    const cachedEvent = pickCachedAIEvent(recentTitles, state.firedOneTimeEvents);
+    if (cachedEvent) {
+      return [staticEvents[0], cachedEvent];
+    }
+
+    // No suitable cached event — generate a fresh one via the AI API.
     setAiLoading(true);
     try {
       const aiEvent = await generateAIEvent(state, selectedModel);
@@ -215,6 +229,14 @@ export default function App() {
       .map(e => ({ event: e, choiceIndex: decisions.get(e.id)! }));
 
     if (choiceEntries.length < currentEvents.length) return;
+
+    // Save any freshly AI-generated events to the local cache so future turns
+    // can reuse them without an API call, growing the event pool over time.
+    for (const { event } of choiceEntries) {
+      if (event.id.startsWith('ai_')) {
+        saveAIEventToCache(event);
+      }
+    }
 
     const newState = resolveTurn(gameState, choiceEntries);
     setGameState(newState);
