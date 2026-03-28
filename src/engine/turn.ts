@@ -2,7 +2,7 @@ import { GameState, GameEvent, TurnRecord } from './types';
 import { applyEffect, processScheduledEffects, applyCascadingEffects, checkGameOver, calculateScore } from './effects';
 import { selectEvents, generateNarrative } from './events';
 import { createRng } from './random';
-import { updatePartyApprovals, updateCoalitionLoyalty, runElection, calculateRatings, getCoalitionSeats } from './politics';
+import { updatePartyApprovals, updateCoalitionLoyalty, runElection, calculateRatings, getCoalitionSeats, getCoalitionLoyalty, checkCoalitionStability, type CoalitionCrisis } from './politics';
 
 export interface TurnResult {
   state: GameState;
@@ -26,13 +26,18 @@ export function getCampaignSeason(state: GameState): number {
 export function startTurn(state: GameState, allEvents: GameEvent[]): TurnResult {
   const rng = createRng(state.seed + state.turn * 7919);
   
-  // Inject virtual campaignSeason indicator for election event preconditions
+  // Inject virtual indicators for event preconditions
   const campaign = getCampaignSeason(state);
-  const stateWithCampaign = campaign > 0
-    ? { ...state, indicators: { ...state.indicators, campaignSeason: campaign } }
-    : state;
+  const loyalty = getCoalitionLoyalty(state.parliament);
+  const coalitionStability = loyalty < 30 ? 0 : loyalty < 50 ? 1 : 2;
+  const virtualIndicators = {
+    ...state.indicators,
+    ...(campaign > 0 ? { campaignSeason: campaign } : {}),
+    coalitionStability,
+  };
+  const stateWithVirtuals = { ...state, indicators: virtualIndicators };
   
-  const events = selectEvents(stateWithCampaign, allEvents, rng, 2);
+  const events = selectEvents(stateWithVirtuals, allEvents, rng, 2);
   return { state, events };
 }
 
@@ -44,7 +49,7 @@ export function resolveTurn(
   const rng = createRng(state.seed + state.turn * 7919 + 1);
   const indicatorsBefore = { ...state.indicators };
 
-  let newState = { ...state };
+  let newState = { ...state, coalitionCrises: undefined };
 
   // 1. Apply all choice effects
   for (const { event, choiceIndex } of decisions) {
@@ -102,6 +107,20 @@ export function resolveTurn(
   const rng2 = createRng(state.seed + newState.turn * 7919 + 2);
   newState.parliament = updatePartyApprovals(newState.parliament, newState.indicators, rng2);
   newState.parliament = updateCoalitionLoyalty(newState.parliament, newState.indicators, rng2);
+
+  // 7b. Check coalition stability — partners may leave if loyalty is too low
+  const rng3 = createRng(state.seed + newState.turn * 7919 + 3);
+  const { parliament: stableParl, crises } = checkCoalitionStability(newState.parliament, rng3);
+  newState.parliament = stableParl;
+  if (crises.length > 0) {
+    newState.coalitionCrises = crises;
+    // Coalition collapse that can't be recovered = game over
+    const collapse = crises.find(c => c.type === 'coalition_collapsed');
+    if (collapse) {
+      newState.gameOver = true;
+      newState.gameOverReason = `Coalition collapsed! ${collapse.reason} Without a parliamentary majority, you can no longer govern.`;
+    }
+  }
 
   // 8. Check for election
   if (newState.turn >= newState.parliament.nextElectionTurn) {

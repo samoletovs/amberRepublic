@@ -264,6 +264,86 @@ export function runElection(parliament: Parliament, indicators: Record<string, n
   return { parliament: newParliament, result: electionResult };
 }
 
+// ─── Coalition Dynamics ──────────────────────────────────────────
+
+export interface CoalitionCrisis {
+  type: 'partner_left' | 'coalition_collapsed' | 'snap_election';
+  partyId?: string;
+  partyName?: string;
+  reason: string;
+}
+
+/**
+ * Check coalition stability after loyalty updates.
+ * Partners with very low loyalty may leave the coalition.
+ * If coalition loses majority, a snap election or collapse occurs.
+ */
+export function checkCoalitionStability(parliament: Parliament, rng: Rng): { parliament: Parliament; crises: CoalitionCrisis[] } {
+  const crises: CoalitionCrisis[] = [];
+  let updatedCoalition = [...parliament.coalitionPartyIds];
+  const parties = [...parliament.parties];
+
+  // Check each non-player coalition partner
+  for (const party of parties) {
+    if (!updatedCoalition.includes(party.id) || party.isPlayer) continue;
+
+    // Hard threshold: loyalty < 10 → automatic departure
+    // Soft threshold: loyalty < 20 → probabilistic departure (50% chance)
+    const leaves =
+      party.loyaltyToYou < 10 ||
+      (party.loyaltyToYou < 20 && rng.next() < 0.5);
+
+    if (leaves) {
+      updatedCoalition = updatedCoalition.filter(id => id !== party.id);
+      crises.push({
+        type: 'partner_left',
+        partyId: party.id,
+        partyName: party.name,
+        reason: `${party.name} (${party.shortName}) left the coalition — loyalty collapsed to ${Math.round(party.loyaltyToYou)}%`,
+      });
+    }
+  }
+
+  if (crises.length === 0) {
+    return { parliament, crises };
+  }
+
+  // Recalculate coalition seats
+  const newParliament = { ...parliament, coalitionPartyIds: updatedCoalition };
+  const seats = getCoalitionSeats(newParliament);
+
+  if (seats < 51) {
+    // Try to recruit a new partner from opposition
+    const available = parties
+      .filter(p => !updatedCoalition.includes(p.id) && !p.isPlayer && p.loyaltyToYou > 25 && p.id !== 'stab')
+      .sort((a, b) => b.loyaltyToYou - a.loyaltyToYou);
+
+    for (const candidate of available) {
+      updatedCoalition.push(candidate.id);
+      const newSeats = parties
+        .filter(p => updatedCoalition.includes(p.id))
+        .reduce((s, p) => s + p.seats, 0);
+      if (newSeats >= 51) break;
+    }
+
+    const finalSeats = parties
+      .filter(p => updatedCoalition.includes(p.id))
+      .reduce((s, p) => s + p.seats, 0);
+
+    if (finalSeats < 51) {
+      crises.push({
+        type: 'coalition_collapsed',
+        reason: `Coalition lost majority (${finalSeats}/100 seats). No viable partners available.`,
+      });
+    }
+  }
+
+  return {
+    parliament: { ...parliament, coalitionPartyIds: updatedCoalition },
+    crises,
+  };
+}
+
 /** Calculate international ratings from indicators */
 export function calculateRatings(indicators: Record<string, number>): InternationalRatings {
   const { gdp, gdpGrowth, publicDebt, unemployment, _inflation, foreignInvestment,
