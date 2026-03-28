@@ -136,6 +136,18 @@ export default function GameScreen({ state, events, decisions, onMakeChoice, onE
         <main className="flex-1 space-y-3">
           {/* Coalition & Ratings */}
           <CoalitionBar parliament={state.parliament} currentTurn={state.turn} />
+          {state.coalitionCrises && state.coalitionCrises.length > 0 && (
+            <div className="glass-card p-4 fade-in" style={{ background: 'rgba(158,48,57,0.06)', border: '1px solid rgba(158,48,57,0.2)' }}>
+              <h3 className="text-sm font-semibold mb-2 uppercase tracking-wider" style={{ color: '#9E3039' }}>
+                ⚠️ Coalition Crisis
+              </h3>
+              {state.coalitionCrises.map((crisis, i) => (
+                <p key={i} className="text-sm leading-relaxed mb-1" style={{ color: '#3D3731' }}>
+                  {crisis.reason}
+                </p>
+              ))}
+            </div>
+          )}
           <RatingsBar ratings={state.ratings} />
 
           {/* Previous turn narrative */}

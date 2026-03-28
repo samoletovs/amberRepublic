@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import { createInitialParliament, getCoalitionSeats, getCoalitionLoyalty } from '../src/engine/politics';
+import { createInitialParliament, getCoalitionSeats, getCoalitionLoyalty, checkCoalitionStability } from '../src/engine/politics';
 import { INDICATORS, getIndicatorMeta } from '../src/engine/indicators';
+import { createRng } from '../src/engine/random';
 
 describe('politics — parliament', () => {
   it('creates parliament with 100 total seats', () => {
@@ -59,5 +60,50 @@ describe('indicators — metadata', () => {
 
   it('has at least 30 indicators', () => {
     expect(INDICATORS.length).toBeGreaterThanOrEqual(30);
+  });
+});
+
+describe('politics — coalition stability', () => {
+  it('stable coalition produces no crises', () => {
+    const parliament = createInitialParliament();
+    const rng = createRng(42);
+    const { crises } = checkCoalitionStability(parliament, rng);
+    expect(crises).toHaveLength(0);
+  });
+
+  it('partner with loyalty < 10 leaves the coalition', () => {
+    const parliament = createInitialParliament();
+    // Set one partner's loyalty to very low
+    parliament.parties = parliament.parties.map(p =>
+      p.id === 'zzs' ? { ...p, loyaltyToYou: 5 } : p
+    );
+    const rng = createRng(42);
+    const { parliament: newParl, crises } = checkCoalitionStability(parliament, rng);
+    const leftCrisis = crises.find(c => c.partyId === 'zzs');
+    expect(leftCrisis).toBeDefined();
+    expect(leftCrisis!.type).toBe('partner_left');
+    expect(newParl.coalitionPartyIds).not.toContain('zzs');
+  });
+
+  it('coalition collapse when majority cannot be recovered', () => {
+    const parliament = createInitialParliament();
+    // Set ALL coalition partners' loyalty to near-zero — they all leave
+    parliament.parties = parliament.parties.map(p =>
+      !p.isPlayer && parliament.coalitionPartyIds.includes(p.id)
+        ? { ...p, loyaltyToYou: 3 }
+        : { ...p, loyaltyToYou: 5 } // opposition also has no loyalty to recruit from
+    );
+    const rng = createRng(42);
+    const { crises } = checkCoalitionStability(parliament, rng);
+    const collapse = crises.find(c => c.type === 'coalition_collapsed');
+    expect(collapse).toBeDefined();
+  });
+
+  it('player party never leaves the coalition', () => {
+    const parliament = createInitialParliament();
+    // Player party loyalty is irrelevant — they ARE the player
+    const rng = createRng(42);
+    const { parliament: newParl } = checkCoalitionStability(parliament, rng);
+    expect(newParl.coalitionPartyIds).toContain('jv');
   });
 });
