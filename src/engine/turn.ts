@@ -49,7 +49,7 @@ export function resolveTurn(
   const rng = createRng(state.seed + state.turn * 7919 + 1);
   const indicatorsBefore = { ...state.indicators };
 
-  let newState = { ...state, coalitionCrises: undefined };
+  let newState: GameState = { ...state, coalitionCrises: undefined };
 
   // 1. Apply all choice effects
   for (const { event, choiceIndex } of decisions) {
