@@ -28,6 +28,8 @@ Thumbs.db
 # Playwright
 .playwright-mcp/
 test-screenshots/
+screenshots/
+*.png
 
 # Skills (managed centrally)
 .github/skills/telegram-notify/
