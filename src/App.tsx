@@ -4,6 +4,7 @@ import { createInitialState } from './engine/state';
 import { startTurn, resolveTurn } from './engine/turn';
 import { ALL_EVENTS } from './data';
 import { generateAIEvent, evaluateCustomChoice, getAvailableModels, type AIModel } from './engine/ai';
+import { saveAiEvent, pickSavedEvent } from './engine/savedEvents';
 import { fetchDynamicStartData, fetchHistoricalData, type HistoricalScenario, HISTORICAL_SCENARIOS } from './engine/latviaData';
 import TitleScreen from './ui/TitleScreen';
 import GameScreen from './ui/GameScreen';
@@ -77,6 +78,16 @@ export default function App() {
     // Hybrid: 1 static + 1 AI-generated event
     setAiLoading(true);
     try {
+      // Try saved AI events first (from previous games)
+      const recentTitles = state.history
+        .slice(-5)
+        .flatMap(h => h.events.map(e => e.event.title));
+      const saved = pickSavedEvent(state, recentTitles);
+      if (saved) {
+        return [staticEvents[0], saved].filter(Boolean);
+      }
+
+      // No suitable saved event — generate a new one via API
       const aiEvent = await generateAIEvent(state, selectedModel);
       if (aiEvent) {
         return [staticEvents[0], aiEvent as GameEvent].filter(Boolean);
@@ -215,6 +226,13 @@ export default function App() {
       .map(e => ({ event: e, choiceIndex: decisions.get(e.id)! }));
 
     if (choiceEntries.length < currentEvents.length) return;
+
+    // Save AI-generated events to localStorage for future reuse
+    for (const { event } of choiceEntries) {
+      if (event.id.startsWith('ai_')) {
+        saveAiEvent(event);
+      }
+    }
 
     const newState = resolveTurn(gameState, choiceEntries);
     setGameState(newState);
