@@ -50,7 +50,7 @@ export interface Choice {
   humor?: string;
 }
 
-export type EventCategory = 'economy' | 'security' | 'society' | 'diplomacy' | 'science' | 'crisis' | 'environment' | 'culture';
+export type EventCategory = 'economy' | 'security' | 'society' | 'diplomacy' | 'science' | 'crisis' | 'environment' | 'culture' | 'petition';
 
 export interface GameEvent {
   id: string;
