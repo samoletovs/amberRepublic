@@ -12,7 +12,10 @@
     "lint": "eslint src/",
     "lint:fix": "eslint src/ --fix",
     "format": "prettier --write \"src/**/*.{ts,tsx,css,json}\"",
-    "format:check": "prettier --check \"src/**/*.{ts,tsx,css,json}\""
+    "format:check": "prettier --check \"src/**/*.{ts,tsx,css,json}\"",
+    "refresh-data": "node scripts/refresh-data/refresh.mjs",
+    "refresh-data:dry": "node scripts/refresh-data/refresh.mjs --dry-run",
+    "refresh-data:petitions": "node scripts/refresh-data/refresh.mjs --source petitions"
   },
   "keywords": [
     "game",

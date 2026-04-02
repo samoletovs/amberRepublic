@@ -31,5 +31,8 @@ test-screenshots/
 screenshots/
 *.png
 
+# Data refresh snapshots (raw API responses)
+scripts/refresh-data/snapshots/
+
 # Skills (managed centrally)
 .github/skills/telegram-notify/

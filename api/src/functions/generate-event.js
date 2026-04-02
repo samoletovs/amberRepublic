@@ -17,7 +17,7 @@ publicHappiness, healthcareQuality, educationQuality, corruptionLevel, mediaTrus
 natoRelations, euStanding, russiaRelations, militaryReadiness, cyberDefense, borderSecurity,
 techSector, rdSpending, digitalInfra, greenTransition
 
-Categories: economy, security, society, diplomacy, science, crisis, environment, culture
+Categories: economy, security, society, diplomacy, science, crisis, environment, culture, petition
 
 Respond with ONLY valid JSON matching this schema:
 {

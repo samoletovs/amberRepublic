@@ -7,6 +7,8 @@ import { extraEvents } from './extra-events';
 import { regionalEvents, tradeEvents, crimeEvents, seasonalEvents } from './csp-events';
 import { electionCampaignEvents } from './election-events';
 import { coalitionEvents } from './coalition-events';
+import { petitionEvents } from './petition-events';
+import { refreshedEvents } from './refreshed-events';
 
 export { ELECTION_FLAVOR } from './election-events';
 
@@ -24,4 +26,6 @@ export const ALL_EVENTS: GameEvent[] = [
   ...seasonalEvents,
   ...electionCampaignEvents,
   ...coalitionEvents,
+  ...petitionEvents,
+  ...refreshedEvents,
 ];

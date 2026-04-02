@@ -21,6 +21,7 @@ const CATEGORY_COLORS: Record<string, string> = {
   crisis: '#f97316',
   environment: '#10b981',
   culture: '#ec4899',
+  petition: '#6366f1',
 };
 
 export default function EventCard({ event, index, selectedChoice, onChoose, aiMode, onCustomResponse, customResponseLoading }: Props) {
