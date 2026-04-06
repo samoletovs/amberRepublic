@@ -207,7 +207,7 @@ export default function RealityDashboard({ onBack }: Props) {
           <h2 style={styles.cardTitle}>📊 About This Dashboard</h2>
           <p style={styles.aboutText}>
             This shows <strong>real Latvia data</strong> from public APIs — the same data that powers
-            the Amber Republic simulation. Play the game to see how your decisions compare to reality.
+            the amberRepublic simulation. Play the game to see how your decisions compare to reality.
           </p>
           <div style={styles.apiList}>
             <div style={styles.apiItem}>⚡ Electricity: NordPool via Elering API</div>

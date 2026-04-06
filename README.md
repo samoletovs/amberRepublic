@@ -1,4 +1,4 @@
-# 🏛️ Amber Republic
+# 🏛️ amberRepublic
 
 **Shape Latvia's Future** — A political and economic simulation game set in modern Latvia.
 
