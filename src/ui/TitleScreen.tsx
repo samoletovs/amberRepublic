@@ -22,7 +22,7 @@ export default function TitleScreen({ onStart, onQuiz, onReality, scenarios }: P
         </div>
 
         <h1 className="text-5xl sm:text-6xl md:text-7xl font-bold mb-3 leading-tight" style={{ color: '#1C1917' }}>
-          amberRepublic
+          amber<span style={{ color: '#9E3039' }}>Republic</span>
         </h1>
 
         <p className="text-base sm:text-lg mb-1 font-light tracking-wide uppercase" style={{ color: '#9E3039', fontFamily: 'Source Sans 3, sans-serif', letterSpacing: '0.15em' }}>
