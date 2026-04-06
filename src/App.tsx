@@ -62,6 +62,7 @@ export default function App() {
 
   // Check available AI models on mount
   useEffect(() => {
+    fetch('/api/track-login', { method: 'POST' }).catch(() => {});
     getAvailableModels().then(({ models }) => {
       setAiModels(models);
       if (models.length > 0) setSelectedModel(models[0].id);
