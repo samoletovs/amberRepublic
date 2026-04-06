@@ -20,7 +20,7 @@ export default function FeedbackButton() {
     if (!text.trim()) return;
 
     const title = `[${typeLabels[type].emoji} ${typeLabels[type].label}] ${text.slice(0, 80)}`;
-    const body = `## ${typeLabels[type].label}\n\n${text}\n\n---\n*Submitted via Amber Republic in-game feedback*`;
+    const body = `## ${typeLabels[type].label}\n\n${text}\n\n---\n*Submitted via amberRepublic in-game feedback*`;
     const labels = type === 'bug' ? 'bug' : type === 'balance' ? 'game-balance' : 'enhancement';
 
     // Open GitHub issue creation URL — works without auth
