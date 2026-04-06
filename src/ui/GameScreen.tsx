@@ -45,7 +45,7 @@ export default function GameScreen({ state, events, decisions, onMakeChoice, onE
           <div className="flex items-center gap-2 sm:gap-3 min-w-0">
             <span className="text-xl sm:text-2xl">🏛️</span>
             <div className="min-w-0">
-              <h1 className="text-sm sm:text-lg font-bold truncate" style={{ color: '#9E3039' }}>amberRepublic</h1>
+              <h1 className="text-sm sm:text-lg font-bold truncate" style={{ color: '#1C1917' }}>amber<span style={{ color: '#9E3039' }}>Republic</span></h1>
               <p className="text-[10px] sm:text-xs" style={{ color: '#78716C' }}>
                 {QUARTER_NAMES[state.quarter - 1]} {state.year} • Term {termNumber} • {untilElection > 0 ? `${untilElection}Q to election` : 'Election!'}
               </p>
