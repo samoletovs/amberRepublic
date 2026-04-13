@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 
 interface ElectricityData {
   currentPrice: number | null;
@@ -51,16 +51,37 @@ export default function RealityDashboard({ onBack }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [factIndex, setFactIndex] = useState(() => Math.floor(Math.random() * LATVIA_FACTS.length));
 
+  const fetchData = useCallback(async () => {
+    try {
+      const resp = await fetch(`${API_BASE}/reality`);
+      if (!resp.ok) throw new Error(`API error: ${resp.status}`);
+      const json = await resp.json();
+      setData(json);
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const handleRetry = useCallback(() => {
+    setLoading(true);
+    setError(null);
+    void fetchData();
+  }, [fetchData]);
+
   useEffect(() => {
     let cancelled = false;
 
-    async function fetchData() {
+    const fetchIfMounted = async () => {
       try {
         const resp = await fetch(`${API_BASE}/reality`);
         if (!resp.ok) throw new Error(`API error: ${resp.status}`);
         const json = await resp.json();
         if (!cancelled) {
           setData(json);
+          setError(null);
           setLoading(false);
         }
       } catch (err) {
@@ -69,11 +90,13 @@ export default function RealityDashboard({ onBack }: Props) {
           setLoading(false);
         }
       }
-    }
+    };
 
-    fetchData();
+    void fetchIfMounted();
     // Refresh every 5 minutes
-    const interval = setInterval(fetchData, 5 * 60 * 1000);
+    const interval = setInterval(() => {
+      void fetchIfMounted();
+    }, 5 * 60 * 1000);
     return () => { cancelled = true; clearInterval(interval); };
   }, []);
 
@@ -95,7 +118,7 @@ export default function RealityDashboard({ onBack }: Props) {
       <div className="reality-dashboard" style={styles.container}>
         <h1 style={styles.title}>🇱🇻 Latvia Right Now</h1>
         <p style={styles.error}>Could not load live data: {error}</p>
-        <button onClick={() => window.location.reload()} style={styles.retryButton}>
+        <button type="button" onClick={handleRetry} style={styles.retryButton}>
           Retry
         </button>
       </div>

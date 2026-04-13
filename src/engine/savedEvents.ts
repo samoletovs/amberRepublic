@@ -1,15 +1,33 @@
 import type { GameEvent, GameState } from './types';
 import { checkCondition } from './effects';
+import { createRng } from './random';
 
 const STORAGE_KEY = 'amberRepublic_savedAiEvents';
 const MAX_SAVED = 200;
+
+function isGameEvent(value: unknown): value is GameEvent {
+  if (!value || typeof value !== 'object') return false;
+  const candidate = value as Partial<GameEvent>;
+  return (
+    typeof candidate.id === 'string' &&
+    typeof candidate.title === 'string' &&
+    typeof candidate.description === 'string' &&
+    Array.isArray(candidate.choices) &&
+    typeof candidate.category === 'string' &&
+    typeof candidate.weight === 'number' &&
+    typeof candidate.oneTime === 'boolean' &&
+    Array.isArray(candidate.preconditions)
+  );
+}
 
 /** Load saved AI events from localStorage */
 export function loadSavedEvents(): GameEvent[] {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return [];
-    return JSON.parse(raw) as GameEvent[];
+    const parsed: unknown = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter(isGameEvent);
   } catch {
     return [];
   }
@@ -33,7 +51,11 @@ export function saveAiEvent(event: GameEvent): void {
   // Cap at MAX_SAVED — drop oldest when full
   while (events.length > MAX_SAVED) events.shift();
 
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(events));
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(events));
+  } catch {
+    // Ignore storage write failures so gameplay can continue.
+  }
 }
 
 /**
@@ -60,8 +82,9 @@ export function pickSavedEvent(
 
   if (eligible.length === 0) return null;
 
-  // Pick a random one (use Math.random — saved events don't need seeded RNG)
-  return eligible[Math.floor(Math.random() * eligible.length)];
+  // Pick deterministically from game seed + turn for reproducible playthroughs.
+  const rng = createRng(state.seed + state.turn * 104729 + eligible.length);
+  return eligible[rng.int(0, eligible.length - 1)];
 }
 
 /** Get count of saved events */

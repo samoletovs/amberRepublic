@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect } from 'react';
 import { GameState, GameEvent } from './engine/types';
 import { createInitialState } from './engine/state';
 import { startTurn, resolveTurn } from './engine/turn';
+import { applyBudgetAllocationEffects, applyIndicatorOverrides } from './engine/startAdjustments';
 import { ALL_EVENTS } from './data';
 import { generateAIEvent, evaluateCustomChoice, getAvailableModels, type AIModel } from './engine/ai';
 import { saveAiEvent, pickSavedEvent } from './engine/savedEvents';
@@ -102,18 +103,19 @@ export default function App() {
   }, [aiMode, aiModels, selectedModel]);
 
   const handleStartGame = useCallback(async (scenario?: HistoricalScenario) => {
-    const state = createInitialState();
+    let state = createInitialState();
 
     // Fetch real data to override starting conditions
     try {
       const overrides = scenario
         ? await fetchHistoricalData(scenario.year)
         : await fetchDynamicStartData();
-      for (const [key, value] of Object.entries(overrides)) {
-        if (value !== null && value !== undefined) state.indicators[key] = value;
-      }
+      state = {
+        ...state,
+        indicators: applyIndicatorOverrides(state.indicators, overrides),
+      };
       if (scenario) {
-        state.year = scenario.year;
+        state = { ...state, year: scenario.year };
       }
     } catch {
       // Fall back to hardcoded values
@@ -127,29 +129,13 @@ export default function App() {
     const state = pendingState;
     if (!state) return;
 
-    // Map budget allocations to game indicator effects
-    const budgetMap: Record<string, { indicator: string; scale: number }> = {
-      GF02: { indicator: 'militaryReadiness', scale: 0.005 },
-      GF03: { indicator: 'borderSecurity', scale: 0.004 },
-      GF07: { indicator: 'healthcareQuality', scale: 0.003 },
-      GF09: { indicator: 'educationQuality', scale: 0.003 },
-      GF10: { indicator: 'socialCohesion', scale: 0.001 },
-      GF05: { indicator: 'greenTransition', scale: 0.01 },
+    const nextState = {
+      ...state,
+      indicators: applyBudgetAllocationEffects(state.indicators, allocations),
     };
 
-    for (const [code, alloc] of Object.entries(allocations)) {
-      const mapping = budgetMap[code];
-      if (mapping) {
-        // Normalize allocation relative to a baseline (effect = (alloc - baseline) * scale)
-        const baselineEffect = alloc * mapping.scale;
-        state.indicators[mapping.indicator] = Math.max(0, Math.min(100,
-          (state.indicators[mapping.indicator] || 50) + (baselineEffect - 3)
-        ));
-      }
-    }
-
-    setGameState(state);
-    const events = await generateEvents(state);
+    setGameState(nextState);
+    const events = await generateEvents(nextState);
     setCurrentEvents(events);
     setDecisions(new Map());
     setScreen('game');
@@ -158,8 +144,9 @@ export default function App() {
   const handleBudgetSkip = useCallback(async () => {
     const state = pendingState;
     if (!state) return;
-    setGameState(state);
-    const events = await generateEvents(state);
+    const nextState = { ...state, indicators: { ...state.indicators } };
+    setGameState(nextState);
+    const events = await generateEvents(nextState);
     setCurrentEvents(events);
     setDecisions(new Map());
     setScreen('game');
