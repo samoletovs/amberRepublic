@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 
 const REPO_OWNER = 'samoletovs';
@@ -9,12 +9,43 @@ export default function FeedbackButton() {
   const [text, setText] = useState('');
   const [type, setType] = useState<'bug' | 'idea' | 'balance'>('idea');
   const [sent, setSent] = useState(false);
+  const textareaRef = useRef<HTMLTextAreaElement | null>(null);
+  const closeTimeoutRef = useRef<number | null>(null);
 
   const typeLabels = {
     bug: { emoji: '🐛', label: 'Bug Report' },
     idea: { emoji: '💡', label: 'Feature Idea' },
     balance: { emoji: '⚖️', label: 'Balance Issue' },
   };
+
+  useEffect(() => {
+    if (!open) return;
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setOpen(false);
+      }
+    };
+
+    window.addEventListener('keydown', onKeyDown);
+    textareaRef.current?.focus();
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener('keydown', onKeyDown);
+    };
+  }, [open]);
+
+  useEffect(() => {
+    return () => {
+      if (closeTimeoutRef.current !== null) {
+        window.clearTimeout(closeTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const handleSubmit = () => {
     if (!text.trim()) return;
@@ -25,10 +56,10 @@ export default function FeedbackButton() {
 
     // Open GitHub issue creation URL — works without auth
     const url = `https://github.com/${REPO_OWNER}/${REPO_NAME}/issues/new?title=${encodeURIComponent(title)}&body=${encodeURIComponent(body)}&labels=${encodeURIComponent(labels)}`;
-    window.open(url, '_blank');
+    window.open(url, '_blank', 'noopener,noreferrer');
 
     setSent(true);
-    setTimeout(() => {
+    closeTimeoutRef.current = window.setTimeout(() => {
       setOpen(false);
       setSent(false);
       setText('');
@@ -38,6 +69,7 @@ export default function FeedbackButton() {
   if (!open) {
     return (
       <button
+        type="button"
         onClick={() => setOpen(true)}
         className="shrink-0 w-10 h-10 sm:w-auto sm:h-auto sm:px-4 sm:py-3 rounded-xl text-sm font-medium transition-all duration-200 flex items-center justify-center gap-1.5"
         style={{
@@ -57,6 +89,10 @@ export default function FeedbackButton() {
       <div 
         className="w-full sm:max-w-md p-5 sm:p-6 fade-in rounded-t-2xl sm:rounded-2xl max-h-[90vh] overflow-y-auto"
         style={{ background: '#F5F0E8', border: '1px solid rgba(28,25,23,0.1)', boxShadow: '0 16px 48px rgba(0,0,0,0.15)' }}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="feedback-modal-title"
+        aria-describedby="feedback-modal-desc"
         onClick={e => e.stopPropagation()}
       >
         {sent ? (
@@ -66,13 +102,14 @@ export default function FeedbackButton() {
           </div>
         ) : (
           <>
-            <h3 className="text-lg font-bold mb-1" style={{ color: '#1C1917' }}>💬 Send Feedback</h3>
-            <p className="text-xs mb-4" style={{ color: '#78716C' }}>Creates a GitHub issue for the dev team.</p>
+            <h3 id="feedback-modal-title" className="text-lg font-bold mb-1" style={{ color: '#1C1917' }}>💬 Send Feedback</h3>
+            <p id="feedback-modal-desc" className="text-xs mb-4" style={{ color: '#78716C' }}>Creates a GitHub issue for the dev team.</p>
 
             {/* Type selector */}
             <div className="flex gap-2 mb-4">
               {(Object.keys(typeLabels) as Array<keyof typeof typeLabels>).map(k => (
                 <button
+                  type="button"
                   key={k}
                   onClick={() => setType(k)}
                   className={`flex-1 py-2 px-3 rounded-lg text-xs font-medium transition-all ${
@@ -89,6 +126,8 @@ export default function FeedbackButton() {
 
             {/* Text input */}
             <textarea
+              ref={textareaRef}
+              aria-label="Feedback details"
               value={text}
               onChange={e => setText(e.target.value)}
               placeholder="Describe what you found, what you'd like, or what feels unbalanced..."
@@ -98,12 +137,14 @@ export default function FeedbackButton() {
 
             <div className="flex gap-3 mt-4">
               <button
+                type="button"
                 onClick={() => setOpen(false)}
                 className="flex-1 py-2.5 rounded-xl text-sm font-medium" style={{ color: '#78716C', background: 'rgba(28,25,23,0.04)', border: '1px solid rgba(28,25,23,0.08)' }}
               >
                 Cancel
               </button>
               <button
+                type="button"
                 onClick={handleSubmit}
                 disabled={!text.trim()}
                 className={`flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all ${

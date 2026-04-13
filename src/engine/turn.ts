@@ -2,7 +2,7 @@ import { GameState, GameEvent, TurnRecord } from './types';
 import { applyEffect, processScheduledEffects, applyCascadingEffects, checkGameOver, calculateScore } from './effects';
 import { selectEvents, generateNarrative } from './events';
 import { createRng } from './random';
-import { updatePartyApprovals, updateCoalitionLoyalty, runElection, calculateRatings, getCoalitionSeats, getCoalitionLoyalty, checkCoalitionStability, type CoalitionCrisis } from './politics';
+import { updatePartyApprovals, updateCoalitionLoyalty, runElection, calculateRatings, getCoalitionSeats, getCoalitionLoyalty, checkCoalitionStability } from './politics';
 
 export interface TurnResult {
   state: GameState;
