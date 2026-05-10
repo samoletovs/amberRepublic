@@ -1,7 +1,7 @@
 ## Amber Republic Project
 
 ### Environment
-- Azure subscription: Visual Studio Enterprise (samoletov@live.com)
+- Azure subscription: Visual Studio Enterprise
 - Azure region: northeurope
 - GitHub: samoletovs/amberRepublic (private)
 
