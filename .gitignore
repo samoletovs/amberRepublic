@@ -36,3 +36,6 @@ scripts/refresh-data/snapshots/
 
 # Skills (managed centrally)
 .github/skills/telegram-notify/
+
+# Local-only personal-info pattern overrides
+scripts/.leak-patterns.local.txt
