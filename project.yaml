@@ -1,0 +1,18 @@
+name: amberRepublic
+purpose: "Political and economic simulation game set in modern Latvia (2025–2035)"
+users: "Players interested in governance, politics, economics"
+stage: active
+goals:
+  - "Real data-driven simulation from Latvia 2025 statistics"
+  - "Delayed consequences with second-order effects"
+  - "Educational gameplay on Latvia's challenges"
+  - "Humor and trade-off tension in decision-making"
+similar:
+  - "Civilization"
+  - "Papers Please"
+  - "Two Point Hospital"
+quality:
+  - tests
+  - ci-cd
+  - responsive
+  - api
