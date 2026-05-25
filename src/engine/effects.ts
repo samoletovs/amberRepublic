@@ -2,6 +2,7 @@ import { GameState, Condition, ScheduledEffect, Effect } from './types';
 import { INDICATORS } from './indicators';
 import { clamp } from './random';
 import type { Rng } from './random';
+import { applyTraitEffectModifiers } from './traits';
 
 /** Check if a single condition is met */
 export function checkCondition(state: GameState, cond: Condition): boolean {
@@ -19,7 +20,19 @@ export function checkCondition(state: GameState, cond: Condition): boolean {
 
 /** Apply an effect: either immediately or schedule it */
 export function applyEffect(state: GameState, effect: Effect, source: string, rng: Rng): GameState {
-  const variedDelta = rng.vary(effect.delta, 0.15);
+  const traitModified = applyTraitEffectModifiers(effect, state.traits ?? []);
+  const variedDelta = rng.vary(traitModified.delta, 0.15);
+
+  // Dual-meter bridge: writes to publicHappiness split into Confidence + Strain
+  // so legacy events automatically feed the new two-bar tension model.
+  if (effect.indicator === 'publicHappiness' && effect.delay <= 0) {
+    if (effect.condition && !checkCondition(state, effect.condition)) {
+      return state;
+    }
+    let s = applyDelta(state, 'publicConfidence', variedDelta * 0.6, effect.duration, source, rng);
+    s = applyDelta(s, 'socialStrain', -variedDelta * 0.6, effect.duration, source, rng);
+    return s;
+  }
 
   if (effect.delay <= 0) {
     // Apply immediately
@@ -29,7 +42,7 @@ export function applyEffect(state: GameState, effect: Effect, source: string, rn
     return applyDelta(state, effect.indicator, variedDelta, effect.duration, source, rng);
   }
 
-  // Schedule for later
+  // Schedule for later — same split applied when the scheduled effect fires
   return {
     ...state,
     scheduledEffects: [
@@ -87,7 +100,12 @@ export function processScheduledEffects(state: GameState, rng: Rng): GameState {
       if (eff.condition && !checkCondition(newState, eff.condition)) {
         continue; // Condition not met, skip
       }
-      newState = applyDelta(newState, eff.indicator, eff.delta, eff.duration, eff.source, rng);
+      if (eff.indicator === 'publicHappiness') {
+        newState = applyDelta(newState, 'publicConfidence', eff.delta * 0.6, eff.duration, eff.source, rng);
+        newState = applyDelta(newState, 'socialStrain', -eff.delta * 0.6, eff.duration, eff.source, rng);
+      } else {
+        newState = applyDelta(newState, eff.indicator, eff.delta, eff.duration, eff.source, rng);
+      }
     } else {
       remaining.push({ ...eff, turnsRemaining: eff.turnsRemaining - 1 });
     }
@@ -159,14 +177,30 @@ export function applyCascadingEffects(state: GameState, _rng: Rng): GameState {
 
   // Low social cohesion → political instability
   if (ind.socialCohesion < 25) {
-    ind.publicHappiness = clamp(ind.publicHappiness - 0.5, 0, 100);
+    ind.publicConfidence = clamp((ind.publicConfidence ?? 50) - 0.4, 0, 100);
+    ind.socialStrain = clamp((ind.socialStrain ?? 50) + 0.4, 0, 100);
     ind.foreignInvestment = clamp(ind.foreignInvestment - 0.2, 0, 100);
   }
 
   // Very low Russia relations + low military → higher threat perception
   if (ind.russiaRelations < 20 && ind.militaryReadiness < 40) {
-    ind.publicHappiness = clamp(ind.publicHappiness - 0.3, 0, 100);
+    ind.publicConfidence = clamp((ind.publicConfidence ?? 50) - 0.3, 0, 100);
+    ind.socialStrain = clamp((ind.socialStrain ?? 50) + 0.2, 0, 100);
   }
+
+  // High unemployment also bites confidence directly
+  if (ind.unemployment > 12) {
+    ind.publicConfidence = clamp((ind.publicConfidence ?? 50) - 0.3, 0, 100);
+    ind.socialStrain = clamp((ind.socialStrain ?? 50) + 0.5, 0, 100);
+  }
+
+  // Slow recovery: confidence drifts toward 50, strain drifts down at rest
+  ind.publicConfidence = clamp((ind.publicConfidence ?? 50) + (50 - (ind.publicConfidence ?? 50)) * 0.02, 0, 100);
+  ind.socialStrain = clamp((ind.socialStrain ?? 50) - 0.15, 0, 100);
+
+  // Derive publicHappiness from the dual meter every turn
+  // (any direct event-writes to publicHappiness happened before cascading via the split bridge)
+  ind.publicHappiness = clamp(((ind.publicConfidence ?? 50) + (100 - (ind.socialStrain ?? 50))) / 2, 0, 100);
 
   return { ...state, indicators: ind };
 }
@@ -177,6 +211,12 @@ export function checkGameOver(state: GameState): GameState {
 
   if (ind.population < 1.2) {
     return { ...state, gameOver: true, gameOverReason: 'Latvia\'s population has fallen below 1.2 million. The country can no longer sustain itself as an independent nation. The Saeima votes to merge into a Nordic-Baltic federation.' };
+  }
+  if ((ind.publicConfidence ?? 50) < 8) {
+    return { ...state, gameOver: true, gameOverReason: 'Confidence in the future has collapsed. Even the optimists left for Dublin. A passive resignation sets in across the country — and across your cabinet. You step down "for personal reasons" no one quite believes.' };
+  }
+  if ((ind.socialStrain ?? 50) > 90) {
+    return { ...state, gameOver: true, gameOverReason: 'Social strain overflows. A general strike paralyses Riga, then Daugavpils, then everywhere. Your motorcade is rerouted around protesters for the fourth week in a row. The President accepts your resignation "with regret".' };
   }
   if (ind.publicHappiness < 5) {
     return { ...state, gameOver: true, gameOverReason: 'Mass protests erupt across Riga. The government collapses. You are escorted from the Saeima by your own guards. Your portrait will not hang in the presidential gallery.' };

@@ -1,6 +1,8 @@
 import { GameState } from '../engine/types';
 import { INDICATORS, getIndicatorMeta } from '../engine/indicators';
 import { createInitialState } from '../engine/state';
+import { generateLegacy } from '../engine/legacy';
+import { getTrait } from '../engine/traits';
 import FeedbackButton from './FeedbackButton';
 import BeatReality from './BeatReality';
 
@@ -21,6 +23,8 @@ function getGrade(score: number): { grade: string; title: string; description: s
 export default function GameOverScreen({ state, onRestart }: Props) {
   const grade = getGrade(state.score);
   const initial = createInitialState(state.seed);
+  const legacy = generateLegacy(state);
+  const traitDefs = state.traits.map(getTrait).filter(Boolean);
 
   // Calculate key changes
   const changes = INDICATORS.map(ind => ({
@@ -34,9 +38,52 @@ export default function GameOverScreen({ state, onRestart }: Props) {
   return (
     <div className="min-h-screen flex items-center justify-center p-4">
       <div className="max-w-2xl w-full fade-in">
+        {/* Legacy Report — Suzerain/Frostpunk-style verdict */}
+        <div
+          className="glass-card p-6 sm:p-8 mb-6 text-center"
+          style={{ background: 'linear-gradient(135deg, rgba(245,240,232,0.95), rgba(184,134,11,0.05))' }}
+        >
+          <div className="text-[10px] font-bold uppercase tracking-[0.25em] mb-3" style={{ color: '#B8860B' }}>
+            ── The Legacy Report ──
+          </div>
+          <div className="text-5xl mb-3">{legacy.archetype.emoji}</div>
+          <h2 className="text-2xl sm:text-3xl font-bold mb-3" style={{ color: '#1C1917' }}>
+            {legacy.archetype.label}
+          </h2>
+          {traitDefs.length > 0 && (
+            <div className="flex justify-center gap-2 mb-4 flex-wrap">
+              {traitDefs.map(t => t && (
+                <span key={t.id} className="text-[11px] px-2 py-0.5 rounded-full" style={{ background: 'rgba(184,134,11,0.12)', color: '#B8860B' }}>
+                  {t.emoji} {t.name}
+                </span>
+              ))}
+            </div>
+          )}
+          <div className="space-y-3 text-left">
+            {legacy.paragraphs.map((p, i) => (
+              <p key={i} className="text-sm leading-relaxed" style={{ color: '#3D3731' }}>{p}</p>
+            ))}
+          </div>
+          <div className="mt-5 pt-4 grid grid-cols-3 sm:grid-cols-6 gap-2" style={{ borderTop: '1px solid rgba(28,25,23,0.08)' }}>
+            {legacy.highlights.map(h => (
+              <div key={h.label} className="text-center">
+                <div
+                  className={`font-data text-sm sm:text-base font-bold ${
+                    h.tone === 'good' ? 'text-green-700' : h.tone === 'bad' ? 'text-red-600' : ''
+                  }`}
+                  style={{ color: h.tone === 'neutral' ? '#1C1917' : undefined }}
+                >
+                  {h.value}
+                </div>
+                <div className="text-[9px] uppercase tracking-wider" style={{ color: '#A8A29E' }}>{h.label}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+
         <div className="glass-card p-8 text-center mb-6">
           <div className="text-6xl mb-4">{grade.emoji}</div>
-          
+
           <div className="inline-block px-6 py-2 rounded-xl mb-4" style={{
             background: '#9E3039',
           }}>
@@ -45,7 +92,7 @@ export default function GameOverScreen({ state, onRestart }: Props) {
 
           <h1 className="text-3xl font-bold mb-2" style={{ color: '#1C1917' }}>{grade.title}</h1>
           <p className="mb-4" style={{ color: '#78716C' }}>{grade.description}</p>
-          
+
           {state.gameOverReason && (
             <div className="glass-card p-4 text-left mb-6" style={{ borderColor: 'rgba(158,48,57,0.15)' }}>
               <p className="text-sm italic leading-relaxed" style={{ color: '#3D3731' }}>{state.gameOverReason}</p>

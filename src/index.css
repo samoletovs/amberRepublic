@@ -106,6 +106,23 @@ h1, h2, h3, h4 {
   50% { box-shadow: 0 0 0 8px rgba(184, 134, 11, 0); }
 }
 
+/* Crisis shake — used by FactionPulse when a faction is in crisis */
+.faction-shake { animation: factionShake 1.4s ease-in-out infinite; }
+@keyframes factionShake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-1.5px) rotate(-2deg); }
+  40% { transform: translateX(1.5px) rotate(2deg); }
+  60% { transform: translateX(-1.5px); }
+  80% { transform: translateX(1px); }
+}
+
+/* Love glow — used by FactionPulse when a faction adores you */
+.faction-glow { animation: factionGlow 3s ease-in-out infinite; }
+@keyframes factionGlow {
+  0%, 100% { box-shadow: 0 0 0 2px #16A34A, 0 0 8px rgba(22,163,74,0.4); }
+  50% { box-shadow: 0 0 0 2px #16A34A, 0 0 14px rgba(22,163,74,0.7); }
+}
+
 /* ── Utilities ────────────────────────────────── */
 * { -webkit-tap-highlight-color: transparent; }
 ::selection { background: rgba(158, 48, 57, 0.15); }

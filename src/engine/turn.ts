@@ -3,6 +3,15 @@ import { applyEffect, processScheduledEffects, applyCascadingEffects, checkGameO
 import { selectEvents, generateNarrative } from './events';
 import { createRng } from './random';
 import { updatePartyApprovals, updateCoalitionLoyalty, runElection, calculateRatings, getCoalitionSeats, getCoalitionLoyalty, checkCoalitionStability } from './politics';
+import { scheduleEcho, dueEchoes } from './echoes';
+import { generateHeadlines } from './newsfeed';
+import { applyFactionReactions, driftFactionApproval } from './factions';
+import { evaluatePromises } from './manifesto';
+import { checkArcTriggers, nextArcEvent, ARCS } from './arcs';
+import { rollSuperpowerDemands, expireDemands } from './superpowers';
+import { applyDecreeEffects } from './decrees';
+import { INDICATORS } from './indicators';
+import { clamp } from './random';
 
 export interface TurnResult {
   state: GameState;
@@ -25,7 +34,7 @@ export function getCampaignSeason(state: GameState): number {
 /** Start a new turn: select events to present to the player */
 export function startTurn(state: GameState, allEvents: GameEvent[]): TurnResult {
   const rng = createRng(state.seed + state.turn * 7919);
-  
+
   // Inject virtual indicators for event preconditions
   const campaign = getCampaignSeason(state);
   const loyalty = getCoalitionLoyalty(state.parliament);
@@ -36,9 +45,24 @@ export function startTurn(state: GameState, allEvents: GameEvent[]): TurnResult 
     coalitionStability,
   };
   const stateWithVirtuals = { ...state, indicators: virtualIndicators };
-  
-  const events = selectEvents(stateWithVirtuals, allEvents, rng, 2);
-  return { state, events };
+
+  // 1. Trigger any newly-eligible arcs (read-only — no state mutation)
+  const completed = state.completedArcs ?? new Set();
+  const activeArcs = checkArcTriggers(state.activeArcs ?? [], completed, state, state.turn);
+
+  // 2. Pull arc-stage events that are due for any active arc
+  const arcEvents: GameEvent[] = [];
+  for (const a of activeArcs) {
+    const { event } = nextArcEvent(a, state.turn, state);
+    if (event) arcEvents.push(event);
+  }
+
+  // 3. Static event pool — pull at most (2 - arc count) so we don't flood
+  const remainingSlots = Math.max(1, 2 - arcEvents.length);
+  const events = selectEvents(stateWithVirtuals, allEvents, rng, remainingSlots);
+
+  // Persist new arc triggers; stage advances happen in resolveTurn.
+  return { state: { ...state, activeArcs }, events: [...arcEvents, ...events] };
 }
 
 /** Resolve a turn after player has made choices */
@@ -51,11 +75,20 @@ export function resolveTurn(
 
   let newState: GameState = { ...state, coalitionCrises: undefined };
 
-  // 1. Apply all choice effects
+  // 1. Apply all choice effects + schedule echoes + faction reactions
+  const newEchoes = [];
+  let factionApproval = { ...(newState.factionApproval ?? {}) };
   for (const { event, choiceIndex } of decisions) {
     const choice = event.choices[choiceIndex];
     for (const effect of choice.effects) {
       newState = applyEffect(newState, effect, `${event.id}:${choice.label}`, rng);
+    }
+    if (choice.factionReactions) {
+      factionApproval = applyFactionReactions(factionApproval as never, choice.factionReactions, rng) as never;
+    }
+    if (choice.hasEcho) {
+      const echo = scheduleEcho(event, choice, newState.turn, newState.year, newState.quarter, rng);
+      if (echo) newEchoes.push(echo);
     }
     // Mark one-time events
     if (event.oneTime) {
@@ -65,6 +98,28 @@ export function resolveTurn(
       };
     }
   }
+  newState = {
+    ...newState,
+    pendingEchoes: [...(newState.pendingEchoes ?? []), ...newEchoes],
+    factionApproval,
+  };
+
+  // 1b. Advance any arc stages that were resolved this turn (by id pattern)
+  const completedArcs = new Set(newState.completedArcs ?? []);
+  const activeArcs = (newState.activeArcs ?? []).map(a => {
+    const arcDef = ARCS.find(x => x.id === a.arcId);
+    if (!arcDef) return a;
+    const matched = decisions.find(d => d.event.id.startsWith(`arc_${a.arcId}_`));
+    if (matched) {
+      const newStage = a.stage + 1;
+      if (newStage >= arcDef.stages.length) {
+        completedArcs.add(a.arcId);
+      }
+      return { ...a, stage: newStage };
+    }
+    return a;
+  }).filter(a => !completedArcs.has(a.arcId));
+  newState = { ...newState, activeArcs, completedArcs };
 
   // 2. Process scheduled effects from previous turns
   newState = processScheduledEffects(newState, rng);
@@ -72,8 +127,33 @@ export function resolveTurn(
   // 3. Apply cascading second-order effects
   newState = applyCascadingEffects(newState, rng);
 
-  // 4. Generate narrative
+  // 3a. Apply per-quarter decree effects + clamp
+  if (newState.decrees && newState.decrees.active.length > 0) {
+    const after = applyDecreeEffects(newState.decrees, newState.indicators);
+    // Clamp to indicator metadata bounds
+    const clamped: Record<string, number> = {};
+    for (const k of Object.keys(after)) {
+      const meta = INDICATORS.find(i => i.key === k);
+      const min = meta?.min ?? 0;
+      const max = meta?.max ?? 100;
+      clamped[k] = clamp(after[k], min, max);
+    }
+    newState = { ...newState, indicators: clamped };
+  }
+
+  // 3a. Passive faction drift based on indicator priorities + cynicism
+  newState = {
+    ...newState,
+    factionApproval: driftFactionApproval(newState.factionApproval as never, newState.indicators, rng, newState.cynicism ?? 0) as never,
+  };
+
+  // 3b. Fire any echoes due this turn
+  const { fired, remaining } = dueEchoes(newState.pendingEchoes ?? [], newState.turn);
+  newState = { ...newState, pendingEchoes: remaining };
+
+  // 4. Generate narrative + headlines
   const narrative = generateNarrative(newState, decisions);
+  const headlines = generateHeadlines(newState, decisions, indicatorsBefore, rng);
 
   // 5. Record history
   const record: TurnRecord = {
@@ -84,6 +164,8 @@ export function resolveTurn(
     indicatorsBefore,
     indicatorsAfter: { ...newState.indicators },
     narrative,
+    echoes: fired.map(e => e.narrative),
+    headlines,
   };
 
   // 6. Advance time
@@ -129,6 +211,11 @@ export function resolveTurn(
     newState.parliament = newParl;
     newState.electionPending = true;
     newState.lastElectionResult = result;
+    // Evaluate manifesto promises for the just-ended term
+    const currentTermIndex = newParl.electionHistory.length - 1;
+    const { cynicismDelta, resolved } = evaluatePromises(newState.promises ?? [], newState, currentTermIndex);
+    newState.promises = resolved;
+    newState.cynicism = Math.max(0, (newState.cynicism ?? 0) + cynicismDelta);
     if (!result.won) {
       newState.gameOver = true;
       newState.gameOverReason = `Election defeat! Your coalition won only ${getCoalitionSeats(newParl)} seats — not enough to govern. The opposition forms a new government. Your time as leader is over.`;
@@ -137,6 +224,20 @@ export function resolveTurn(
 
   // 9. Update international ratings
   newState.ratings = calculateRatings(newState.indicators);
+
+  // 9b. Accrue Political Capital each quarter (bonus from reform position).
+  const civilBonus = (newState.constitution?.positions.civil ?? 0) > 0 ? 1 : 0;
+  newState.constitution = newState.constitution
+    ? { ...newState.constitution, politicalCapital: Math.min(40, newState.constitution.politicalCapital + 1 + civilBonus) }
+    : newState.constitution;
+
+  // 9c. Roll & expire superpower demands
+  const spRng = createRng(state.seed + newState.turn * 24317);
+  let spState = newState.superpowers ?? { standing: { eu: 50, ru: 12, us: 50 }, active: [], resolved: [] };
+  const { state: expiredState } = expireDemands(spState, newState.turn);
+  spState = expiredState;
+  spState = rollSuperpowerDemands(spState, newState.turn, spRng, newState.indicators.russiaRelations);
+  newState.superpowers = spState;
 
   // 10. Check game over
   newState = checkGameOver(newState);

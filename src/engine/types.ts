@@ -1,4 +1,11 @@
 import type { Parliament, InternationalRatings, ElectionResult, CoalitionCrisis } from './politics';
+import type { TraitId } from './traits';
+import type { FactionId, ReactionLevel } from './factions';
+import type { PromiseRecord } from './manifesto';
+import type { ConstitutionState } from './constitution';
+import type { ActiveArc, ArcId } from './arcs';
+import type { SuperpowerState } from './superpowers';
+import type { DecreeState } from './decrees';
 
 // ─── Core Game Types ─────────────────────────────────────────────
 export interface GameState {
@@ -18,6 +25,26 @@ export interface GameState {
   electionPending?: boolean;
   lastElectionResult?: ElectionResult;
   coalitionCrises?: CoalitionCrisis[];
+  /** Player-picked traits (max 2). */
+  traits: TraitId[];
+  /** Pending narrative echoes that fire on a later turn. */
+  pendingEchoes: Echo[];
+  /** Faction approval map — Tropico-style ideological blocs. */
+  factionApproval: Record<FactionId, number>;
+  /** Manifesto promises made (with kept/broken status once evaluated). */
+  promises: PromiseRecord[];
+  /** Permanent voter-cynicism meter — accumulates with broken promises. */
+  cynicism: number;
+  /** Frostpunk-style Book of Laws — 4 pillars + Political Capital. */
+  constitution: ConstitutionState;
+  /** Currently-running multi-quarter event arcs (CK3-style storylines). */
+  activeArcs: ActiveArc[];
+  /** Arcs the player has fully completed (won't re-trigger). */
+  completedArcs: Set<ArcId>;
+  /** Tropico-style superpower demand queue (EU/RU/US). */
+  superpowers: SuperpowerState;
+  /** Active toggleable policy decrees (Tropico edicts). */
+  decrees: DecreeState;
 }
 
 export interface ScheduledEffect {
@@ -48,6 +75,27 @@ export interface Choice {
   description: string;
   effects: Effect[];
   humor?: string;
+  /**
+   * When true, the engine schedules a narrative "Echo" that surfaces 2-4 turns
+   * after this choice. The Echo references the original decision by date.
+   */
+  hasEcho?: boolean;
+  /**
+   * Optional custom echo narrative template. If omitted, the engine generates
+   * one from the event title + dominant effect.
+   */
+  echoTemplate?: string;
+  /**
+   * Tropico-style faction reactions to this choice. Each entry shifts faction
+   * approval by the level's delta. Missing factions are unaffected.
+   */
+  factionReactions?: Partial<Record<FactionId, ReactionLevel>>;
+  /**
+   * Reigns/Frostpunk-style irreversibility flag. The UI shows a broken-chain
+   * badge and a confirmation modal before applying the choice. Choosing here
+   * is final — and rendered visibly so.
+   */
+  irreversible?: boolean;
 }
 
 export type EventCategory = 'economy' | 'security' | 'society' | 'diplomacy' | 'science' | 'crisis' | 'environment' | 'culture' | 'petition';
@@ -62,6 +110,8 @@ export interface GameEvent {
   weight: number;
   oneTime: boolean;
   flavor?: string;
+  /** Trigger the Advisor Debate panel before showing choices. */
+  highStakes?: boolean;
 }
 
 export interface TurnRecord {
@@ -71,6 +121,18 @@ export interface TurnRecord {
   events: { event: GameEvent; choiceIndex: number }[];
   indicatorsBefore: Record<string, number>;
   indicatorsAfter: Record<string, number>;
+  narrative: string;
+  /** Echo narratives that fired this turn (delayed consequences from prior turns). */
+  echoes?: string[];
+  /** Procedurally-generated news headlines for this quarter (Tropico-style). */
+  headlines?: string[];
+}
+
+export interface Echo {
+  id: string;
+  sourceEventTitle: string;
+  sourceQuarterLabel: string; // "Q2 2025"
+  fireTurn: number;
   narrative: string;
 }
 

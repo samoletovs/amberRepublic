@@ -20,7 +20,9 @@ export const INDICATORS: IndicatorMeta[] = [
   { key: 'workforceSkill', name: 'Workforce Skills', description: 'Education and skill level of workers', emoji: '🎓', category: 'demographics', format: 'index', min: 0, max: 100, goodDirection: 'up' },
 
   // Society
-  { key: 'publicHappiness', name: 'Public Happiness', description: 'General population satisfaction', emoji: '😊', category: 'society', format: 'index', min: 0, max: 100, goodDirection: 'up' },
+  { key: 'publicHappiness', name: 'Public Happiness', description: 'Aggregate mood — derived from Confidence and Strain', emoji: '😊', category: 'society', format: 'index', min: 0, max: 100, goodDirection: 'up' },
+  { key: 'publicConfidence', name: 'Public Confidence', description: 'Belief the country is heading in the right direction', emoji: '🌅', category: 'society', format: 'index', min: 0, max: 100, goodDirection: 'up' },
+  { key: 'socialStrain', name: 'Social Strain', description: 'Resentment, inequality, daily friction. Lower is better.', emoji: '😤', category: 'society', format: 'index', min: 0, max: 100, goodDirection: 'down' },
   { key: 'healthcareQuality', name: 'Healthcare', description: 'Quality and accessibility of healthcare', emoji: '🏥', category: 'society', format: 'index', min: 0, max: 100, goodDirection: 'up' },
   { key: 'educationQuality', name: 'Education', description: 'Quality of education system', emoji: '📚', category: 'society', format: 'index', min: 0, max: 100, goodDirection: 'up' },
   { key: 'corruptionLevel', name: 'Corruption', description: 'Level of corruption in government and business', emoji: '🕵️', category: 'society', format: 'index', min: 0, max: 100, goodDirection: 'down' },
