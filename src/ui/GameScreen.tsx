@@ -2,9 +2,11 @@ import { useState } from 'react';
 import { GameState, GameEvent } from '../engine/types';
 import { getIndicatorMeta } from '../engine/indicators';
 import { magnitudeOf } from '../engine/magnitudes';
+import { reactionDelta, reactionSymbol, type FactionId } from '../engine/factions';
 import type { AIModel } from '../engine/ai';
 import IndicatorPanel from './IndicatorPanel';
 import EventCard from './EventCard';
+import FactionPulse from './FactionPulse';
 import FeedbackButton from './FeedbackButton';
 import RatingsBar from './RatingsBar';
 import CoalitionBar from './CoalitionBar';
@@ -35,8 +37,23 @@ export default function GameScreen({ state, events, decisions, onMakeChoice, onE
   const allDecisionsMade = events.every(e => decisions.has(e.id));
   const lastRecord = state.history[state.history.length - 1];
   const [showIndicators, setShowIndicators] = useState(false);
+  const [hoveredChoice, setHoveredChoice] = useState<{ eventId: string; choiceIndex: number } | null>(null);
   const termNumber = state.parliament.electionHistory.length + 1;
   const untilElection = turnsUntilElection(state);
+
+  // Compute preview reactions for the currently-hovered choice — used by FactionPulse.
+  const previewReactions: Partial<Record<FactionId, { delta: number; level: string; symbol: string }>> = (() => {
+    if (!hoveredChoice) return {};
+    const ev = events.find(e => e.id === hoveredChoice.eventId);
+    if (!ev) return {};
+    const ch = ev.choices[hoveredChoice.choiceIndex];
+    if (!ch?.factionReactions) return {};
+    const out: Partial<Record<FactionId, { delta: number; level: string; symbol: string }>> = {};
+    for (const [fid, level] of Object.entries(ch.factionReactions) as [FactionId, 'love' | 'cheer' | 'meh' | 'frown' | 'rage'][]) {
+      out[fid] = { delta: reactionDelta(level), level, symbol: reactionSymbol(level) };
+    }
+    return out;
+  })();
 
   return (
     <div className="min-h-screen p-2 sm:p-3 md:p-6 pb-24">
@@ -137,6 +154,7 @@ export default function GameScreen({ state, events, decisions, onMakeChoice, onE
         <main className="flex-1 space-y-3">
           {/* Coalition & Ratings */}
           <CoalitionBar parliament={state.parliament} currentTurn={state.turn} />
+          <FactionPulse approval={state.factionApproval} preview={previewReactions} />
           {state.coalitionCrises && state.coalitionCrises.length > 0 && (
             <div className="glass-card p-4 fade-in" style={{ background: 'rgba(158,48,57,0.06)', border: '1px solid rgba(158,48,57,0.2)' }}>
               <h3 className="text-sm font-semibold mb-2 uppercase tracking-wider" style={{ color: '#9E3039' }}>
@@ -215,9 +233,11 @@ export default function GameScreen({ state, events, decisions, onMakeChoice, onE
                 index={i}
                 selectedChoice={decisions.get(event.id)}
                 onChoose={(choiceIndex) => onMakeChoice(event.id, choiceIndex)}
+                onHoverChoice={(choiceIndex) => setHoveredChoice(choiceIndex === null ? null : { eventId: event.id, choiceIndex })}
                 aiMode={aiMode}
                 onCustomResponse={(text) => onCustomResponse(event.id, text)}
                 customResponseLoading={aiLoading}
+                turnSeed={state.turn}
               />
             ))}
           </div>

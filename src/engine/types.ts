@@ -1,5 +1,7 @@
 import type { Parliament, InternationalRatings, ElectionResult, CoalitionCrisis } from './politics';
 import type { TraitId } from './traits';
+import type { FactionId, ReactionLevel } from './factions';
+import type { PromiseRecord } from './manifesto';
 
 // ─── Core Game Types ─────────────────────────────────────────────
 export interface GameState {
@@ -23,6 +25,12 @@ export interface GameState {
   traits: TraitId[];
   /** Pending narrative echoes that fire on a later turn. */
   pendingEchoes: Echo[];
+  /** Faction approval map — Tropico-style ideological blocs. */
+  factionApproval: Record<FactionId, number>;
+  /** Manifesto promises made (with kept/broken status once evaluated). */
+  promises: PromiseRecord[];
+  /** Permanent voter-cynicism meter — accumulates with broken promises. */
+  cynicism: number;
 }
 
 export interface ScheduledEffect {
@@ -63,6 +71,11 @@ export interface Choice {
    * one from the event title + dominant effect.
    */
   echoTemplate?: string;
+  /**
+   * Tropico-style faction reactions to this choice. Each entry shifts faction
+   * approval by the level's delta. Missing factions are unaffected.
+   */
+  factionReactions?: Partial<Record<FactionId, ReactionLevel>>;
 }
 
 export type EventCategory = 'economy' | 'security' | 'society' | 'diplomacy' | 'science' | 'crisis' | 'environment' | 'culture' | 'petition';
@@ -77,6 +90,8 @@ export interface GameEvent {
   weight: number;
   oneTime: boolean;
   flavor?: string;
+  /** Trigger the Advisor Debate panel before showing choices. */
+  highStakes?: boolean;
 }
 
 export interface TurnRecord {

@@ -5,6 +5,8 @@ import { createRng } from './random';
 import { updatePartyApprovals, updateCoalitionLoyalty, runElection, calculateRatings, getCoalitionSeats, getCoalitionLoyalty, checkCoalitionStability } from './politics';
 import { scheduleEcho, dueEchoes } from './echoes';
 import { generateHeadlines } from './newsfeed';
+import { applyFactionReactions, driftFactionApproval } from './factions';
+import { evaluatePromises } from './manifesto';
 
 export interface TurnResult {
   state: GameState;
@@ -53,12 +55,16 @@ export function resolveTurn(
 
   let newState: GameState = { ...state, coalitionCrises: undefined };
 
-  // 1. Apply all choice effects + schedule echoes for flagged choices
+  // 1. Apply all choice effects + schedule echoes + faction reactions
   const newEchoes = [];
+  let factionApproval = { ...(newState.factionApproval ?? {}) };
   for (const { event, choiceIndex } of decisions) {
     const choice = event.choices[choiceIndex];
     for (const effect of choice.effects) {
       newState = applyEffect(newState, effect, `${event.id}:${choice.label}`, rng);
+    }
+    if (choice.factionReactions) {
+      factionApproval = applyFactionReactions(factionApproval as never, choice.factionReactions, rng) as never;
     }
     if (choice.hasEcho) {
       const echo = scheduleEcho(event, choice, newState.turn, newState.year, newState.quarter, rng);
@@ -75,6 +81,7 @@ export function resolveTurn(
   newState = {
     ...newState,
     pendingEchoes: [...(newState.pendingEchoes ?? []), ...newEchoes],
+    factionApproval,
   };
 
   // 2. Process scheduled effects from previous turns
@@ -82,6 +89,12 @@ export function resolveTurn(
 
   // 3. Apply cascading second-order effects
   newState = applyCascadingEffects(newState, rng);
+
+  // 3a. Passive faction drift based on indicator priorities + cynicism
+  newState = {
+    ...newState,
+    factionApproval: driftFactionApproval(newState.factionApproval as never, newState.indicators, rng, newState.cynicism ?? 0) as never,
+  };
 
   // 3b. Fire any echoes due this turn
   const { fired, remaining } = dueEchoes(newState.pendingEchoes ?? [], newState.turn);
@@ -147,6 +160,11 @@ export function resolveTurn(
     newState.parliament = newParl;
     newState.electionPending = true;
     newState.lastElectionResult = result;
+    // Evaluate manifesto promises for the just-ended term
+    const currentTermIndex = newParl.electionHistory.length - 1;
+    const { cynicismDelta, resolved } = evaluatePromises(newState.promises ?? [], newState, currentTermIndex);
+    newState.promises = resolved;
+    newState.cynicism = Math.max(0, (newState.cynicism ?? 0) + cynicismDelta);
     if (!result.won) {
       newState.gameOver = true;
       newState.gameOverReason = `Election defeat! Your coalition won only ${getCoalitionSeats(newParl)} seats — not enough to govern. The opposition forms a new government. Your time as leader is over.`;

@@ -4,12 +4,14 @@ import { createInitialState } from './engine/state';
 import { startTurn, resolveTurn } from './engine/turn';
 import { applyBudgetAllocationEffects, applyIndicatorOverrides } from './engine/startAdjustments';
 import { applyTraitStartBias, type TraitId } from './engine/traits';
+import { applyTraitFactionBias } from './engine/factions';
 import { ALL_EVENTS } from './data';
 import { generateAIEvent, evaluateCustomChoice, getAvailableModels, type AIModel } from './engine/ai';
 import { saveAiEvent, pickSavedEvent } from './engine/savedEvents';
 import { fetchDynamicStartData, fetchHistoricalData, type HistoricalScenario, HISTORICAL_SCENARIOS } from './engine/latviaData';
 import TitleScreen from './ui/TitleScreen';
 import OnboardingScreen from './ui/OnboardingScreen';
+import ManifestoScreen from './ui/ManifestoScreen';
 import GameScreen from './ui/GameScreen';
 import GameOverScreen from './ui/GameOverScreen';
 import QuizScreen from './ui/QuizScreen';
@@ -17,7 +19,7 @@ import BudgetScreen from './ui/BudgetScreen';
 import RealityDashboard from './ui/RealityDashboard';
 import ElectionResultsScreen from './ui/ElectionResultsScreen';
 
-type Screen = 'title' | 'onboarding' | 'game' | 'gameover' | 'quiz' | 'budget' | 'reality' | 'election';
+type Screen = 'title' | 'onboarding' | 'manifesto' | 'game' | 'gameover' | 'quiz' | 'budget' | 'reality' | 'election';
 
 // Screens that can be navigated to via URL hash
 const HASH_SCREENS: Record<string, Screen> = {
@@ -135,6 +137,22 @@ export default function App() {
       ...state,
       traits,
       indicators: applyTraitStartBias(state.indicators, traits),
+      factionApproval: applyTraitFactionBias(state.factionApproval, traits),
+    };
+    setPendingState(biased);
+    setScreen('manifesto');
+  }, [pendingState]);
+
+  const handleManifestoConfirm = useCallback((promiseIds: string[]) => {
+    const state = pendingState;
+    if (!state) return;
+    const termIndex = state.parliament.electionHistory.length; // 0 for first term
+    const biased = {
+      ...state,
+      promises: [
+        ...state.promises,
+        ...promiseIds.map(id => ({ promiseId: id, termIndex })),
+      ],
     };
     setPendingState(biased);
     setScreen('budget');
@@ -265,14 +283,29 @@ export default function App() {
 
   const handleElectionContinue = useCallback(async () => {
     if (!gameState) return;
-    // Clear election pending flag and continue
+    // Clear election pending flag and route to manifesto for new term
     const updatedState = { ...gameState, electionPending: false, lastElectionResult: undefined };
-    setGameState(updatedState);
-    const events = await generateEvents(updatedState);
+    setPendingState(updatedState);
+    setScreen('manifesto');
+  }, [gameState]);
+
+  const handleNewTermManifestoConfirm = useCallback(async (promiseIds: string[]) => {
+    if (!pendingState) return;
+    const termIndex = pendingState.parliament.electionHistory.length;
+    const finalState = {
+      ...pendingState,
+      promises: [
+        ...pendingState.promises,
+        ...promiseIds.map(id => ({ promiseId: id, termIndex })),
+      ],
+    };
+    setGameState(finalState);
+    setPendingState(null);
+    const events = await generateEvents(finalState);
     setCurrentEvents(events);
     setDecisions(new Map());
     setScreen('game');
-  }, [gameState, generateEvents]);
+  }, [pendingState, generateEvents]);
 
   const handleQuiz = useCallback(() => {
     setScreen('quiz');
@@ -293,6 +326,12 @@ export default function App() {
         <OnboardingScreen
           onConfirm={handleTraitsConfirm}
           onBack={() => setScreen('title')}
+        />
+      )}
+      {screen === 'manifesto' && (
+        <ManifestoScreen
+          onConfirm={gameState ? handleNewTermManifestoConfirm : handleManifestoConfirm}
+          termNumber={(pendingState?.parliament.electionHistory.length ?? 0) + (gameState ? 0 : 1)}
         />
       )}
       {screen === 'budget' && (
