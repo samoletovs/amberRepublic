@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { GameState, GameEvent } from '../engine/types';
 import { getIndicatorMeta } from '../engine/indicators';
+import { magnitudeOf } from '../engine/magnitudes';
 import type { AIModel } from '../engine/ai';
 import IndicatorPanel from './IndicatorPanel';
 import EventCard from './EventCard';
@@ -150,11 +151,32 @@ export default function GameScreen({ state, events, decisions, onMakeChoice, onE
           )}
           <RatingsBar ratings={state.ratings} />
 
-          {/* Previous turn narrative */}
+          {/* Previous turn narrative + echoes + headlines */}
           {lastRecord && (
             <div className="glass-card p-4 fade-in">
               <h3 className="text-sm font-semibold mb-2 uppercase tracking-wider" style={{ color: '#B8860B' }}>📜 Last Quarter</h3>
               <p className="text-sm leading-relaxed" style={{ color: '#3D3731' }}>{lastRecord.narrative}</p>
+              {/* Echoes — delayed consequences from past decisions */}
+              {lastRecord.echoes && lastRecord.echoes.length > 0 && (
+                <div className="mt-3 pt-3 space-y-2" style={{ borderTop: '1px dashed rgba(184,134,11,0.25)' }}>
+                  <h4 className="text-[10px] font-bold uppercase tracking-wider" style={{ color: '#B8860B' }}>🔁 Echoes from earlier quarters</h4>
+                  {lastRecord.echoes.map((e, i) => (
+                    <p key={i} className="text-xs italic leading-relaxed" style={{ color: '#3D3731' }}>{e}</p>
+                  ))}
+                </div>
+              )}
+              {/* Headlines — Tropico-style commentary */}
+              {lastRecord.headlines && lastRecord.headlines.length > 0 && (
+                <div className="mt-3 pt-3 space-y-1" style={{ borderTop: '1px dashed rgba(158,48,57,0.18)' }}>
+                  <h4 className="text-[10px] font-bold uppercase tracking-wider" style={{ color: '#9E3039' }}>📰 The Morning Papers</h4>
+                  {lastRecord.headlines.map((h, i) => (
+                    <p key={i} className="text-xs leading-snug" style={{ color: '#3D3731' }}>
+                      <span className="font-semibold" style={{ color: '#9E3039' }}>{h.split(':')[0]}:</span>
+                      <span>{h.substring(h.indexOf(':') + 1)}</span>
+                    </p>
+                  ))}
+                </div>
+              )}
               {/* Show indicator changes */}
               <div className="mt-3 flex flex-wrap gap-2">
                 {Object.entries(lastRecord.indicatorsAfter).map(([key, val]) => {
@@ -166,13 +188,14 @@ export default function GameScreen({ state, events, decisions, onMakeChoice, onE
                   if (!meta) return null;
                   const isGood = (meta.goodDirection === 'up' && diff > 0) || 
                                  (meta.goodDirection === 'down' && diff < 0);
+                  const mag = magnitudeOf(key, diff);
                   return (
                     <span key={key} className={`text-xs px-2 py-1 rounded-full ${
                       isGood ? 'bg-green-500/10 text-green-600' : 
                       meta.goodDirection === 'neutral' ? 'bg-blue-500/10 text-blue-500' :
                       'bg-red-500/10 text-red-500'
                     }`}>
-                      {meta.emoji} {meta.name} {diff > 0 ? '↑' : '↓'}{Math.abs(diff).toFixed(1)}
+                      {meta.emoji} {meta.name} {diff > 0 ? '↑' : '↓'} {mag}
                     </span>
                   );
                 })}

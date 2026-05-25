@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { GameEvent } from '../engine/types';
 import { getIndicatorMeta } from '../engine/indicators';
+import { magnitudeOf, delayLabelOf, magnitudeWeight } from '../engine/magnitudes';
 
 interface Props {
   event: GameEvent & { _model?: string };
@@ -78,30 +79,47 @@ export default function EventCard({ event, index, selectedChoice, onChoose, aiMo
                   <h4 className="font-semibold text-sm mb-1" style={{ color: '#1C1917' }}>{choice.label}</h4>
                   <p className="text-xs leading-relaxed mb-2" style={{ color: '#78716C' }}>{choice.description}</p>
                   
-                  {/* Effect preview */}
-                  <div className="flex flex-wrap gap-1.5">
+                  {/* Effect preview — Reigns-style: direction + qualitative magnitude only */}
+                  <div className="flex flex-wrap gap-1.5 items-center">
                     {choice.effects.slice(0, 5).map((eff, ei) => {
                       const meta = getIndicatorMeta(eff.indicator);
                       if (!meta) return null;
                       const isPositive = (meta.goodDirection === 'up' && eff.delta > 0) ||
                                         (meta.goodDirection === 'down' && eff.delta < 0);
                       const isNeutral = meta.goodDirection === 'neutral';
+                      const mag = magnitudeOf(eff.indicator, eff.delta);
+                      const delayLabel = delayLabelOf(eff.delay);
+                      const weight = magnitudeWeight(mag);
+                      const dots = '·'.repeat(weight);
                       return (
-                        <span 
-                          key={ei} 
-                          className={`text-[10px] px-1.5 py-0.5 rounded ${
+                        <span
+                          key={ei}
+                          className={`text-[10px] px-1.5 py-0.5 rounded inline-flex items-center gap-1 ${
                             isNeutral ? 'bg-blue-500/10 text-blue-600' :
                             isPositive ? 'bg-green-500/10 text-green-700' : 'bg-red-500/10 text-red-600'
                           }`}
-                          title={`${meta.name}: ${eff.delta > 0 ? '+' : ''}${eff.delta}${eff.delay > 0 ? ` (in ${eff.delay} turns)` : ''}`}
+                          title={`${meta.name} ${eff.delta > 0 ? '↑' : '↓'} ${mag}${delayLabel !== 'Now' ? ` · ${delayLabel}` : ''}`}
                         >
-                          {meta.emoji} {eff.delta > 0 ? '↑' : '↓'}
-                          {eff.delay > 0 && <span className="opacity-60 ml-0.5">⏳{eff.delay}t</span>}
+                          {meta.emoji}
+                          <span className="font-bold">{eff.delta > 0 ? '↑' : '↓'}</span>
+                          <span className="font-data leading-none tracking-tighter" aria-hidden="true">{dots}</span>
+                          {delayLabel !== 'Now' && (
+                            <span className="opacity-60">⏳</span>
+                          )}
                         </span>
                       );
                     })}
                     {choice.effects.length > 5 && (
                       <span className="text-[10px] text-slate-500">+{choice.effects.length - 5} more</span>
+                    )}
+                    {choice.hasEcho && (
+                      <span
+                        className="text-[10px] px-1.5 py-0.5 rounded inline-flex items-center gap-0.5 font-semibold"
+                        style={{ background: 'rgba(184,134,11,0.12)', color: '#B8860B' }}
+                        title="A delayed consequence will surface in a future quarter."
+                      >
+                        🔁 Echo expected
+                      </span>
                     )}
                   </div>
 

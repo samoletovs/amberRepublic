@@ -25,7 +25,9 @@ export function createInitialState(seed?: number): GameState {
     workforceSkill: 52,   // Decent but brain drain hurts
 
     // Society
-    publicHappiness: 45,  // Mid-range
+    publicHappiness: 45,  // Derived from Confidence + Strain (kept for back-compat with events)
+    publicConfidence: 45, // "Is the country heading the right way?"
+    socialStrain: 50,     // "Does daily life feel hard?" (lower is better)
     healthcareQuality: 35, // Worst-ranked in EU historically
     educationQuality: 58, // University system decent
     corruptionLevel: 42,  // CPI 59/100 → inverted
@@ -68,5 +70,7 @@ export function createInitialState(seed?: number): GameState {
     firedOneTimeEvents: new Set(),
     parliament: createInitialParliament(),
     ratings: calculateRatings(indicators),
+    traits: [],
+    pendingEchoes: [],
   };
 }

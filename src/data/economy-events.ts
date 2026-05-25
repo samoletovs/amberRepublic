@@ -21,6 +21,7 @@ export const economyEvents: GameEvent[] = [
           { indicator: 'euStanding', delta: 5, delay: 2, duration: 0 },
           { indicator: 'portActivity', delta: 6, delay: 4, duration: 0 },
         ],
+        hasEcho: true,
         humor: 'The infrastructure minister starts wearing a conductor\'s hat to cabinet meetings.',
       },
       {
@@ -67,6 +68,7 @@ export const economyEvents: GameEvent[] = [
           { indicator: 'publicHappiness', delta: -3, delay: 1, duration: 0 },
           { indicator: 'taxBurden', delta: -5, delay: 0, duration: 0 },
         ],
+        hasEcho: true,
         humor: 'Oligarchs in Jūrmala celebrate with champagne. Hospital queues grow slightly longer.',
       },
       {
@@ -80,6 +82,7 @@ export const economyEvents: GameEvent[] = [
           { indicator: 'publicHappiness', delta: 2, delay: 1, duration: 0 },
           { indicator: 'taxBurden', delta: 5, delay: 0, duration: 0 },
         ],
+        hasEcho: true,
         humor: 'A prominent businessman tweets from his new Tallinn office: "Estonia is beautiful this time of year."',
       },
       {

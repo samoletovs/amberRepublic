@@ -3,11 +3,13 @@ import { GameState, GameEvent } from './engine/types';
 import { createInitialState } from './engine/state';
 import { startTurn, resolveTurn } from './engine/turn';
 import { applyBudgetAllocationEffects, applyIndicatorOverrides } from './engine/startAdjustments';
+import { applyTraitStartBias, type TraitId } from './engine/traits';
 import { ALL_EVENTS } from './data';
 import { generateAIEvent, evaluateCustomChoice, getAvailableModels, type AIModel } from './engine/ai';
 import { saveAiEvent, pickSavedEvent } from './engine/savedEvents';
 import { fetchDynamicStartData, fetchHistoricalData, type HistoricalScenario, HISTORICAL_SCENARIOS } from './engine/latviaData';
 import TitleScreen from './ui/TitleScreen';
+import OnboardingScreen from './ui/OnboardingScreen';
 import GameScreen from './ui/GameScreen';
 import GameOverScreen from './ui/GameOverScreen';
 import QuizScreen from './ui/QuizScreen';
@@ -15,13 +17,14 @@ import BudgetScreen from './ui/BudgetScreen';
 import RealityDashboard from './ui/RealityDashboard';
 import ElectionResultsScreen from './ui/ElectionResultsScreen';
 
-type Screen = 'title' | 'game' | 'gameover' | 'quiz' | 'budget' | 'reality' | 'election';
+type Screen = 'title' | 'onboarding' | 'game' | 'gameover' | 'quiz' | 'budget' | 'reality' | 'election';
 
 // Screens that can be navigated to via URL hash
 const HASH_SCREENS: Record<string, Screen> = {
   '#quiz': 'quiz',
   '#reality': 'reality',
   '#game': 'game',
+  '#onboarding': 'onboarding',
 };
 
 function getScreenFromHash(): Screen {
@@ -122,8 +125,20 @@ export default function App() {
     }
 
     setPendingState(state);
-    setScreen('budget');
+    setScreen('onboarding');
   }, []);
+
+  const handleTraitsConfirm = useCallback((traits: TraitId[]) => {
+    const state = pendingState;
+    if (!state) return;
+    const biased = {
+      ...state,
+      traits,
+      indicators: applyTraitStartBias(state.indicators, traits),
+    };
+    setPendingState(biased);
+    setScreen('budget');
+  }, [pendingState]);
 
   const handleBudgetAllocate = useCallback(async (allocations: Record<string, number>) => {
     const state = pendingState;
@@ -274,6 +289,12 @@ export default function App() {
         />
       )}
       {screen === 'quiz' && <QuizScreen onBack={handleRestart} />}
+      {screen === 'onboarding' && (
+        <OnboardingScreen
+          onConfirm={handleTraitsConfirm}
+          onBack={() => setScreen('title')}
+        />
+      )}
       {screen === 'budget' && (
         <BudgetScreen onAllocate={handleBudgetAllocate} onSkip={handleBudgetSkip} />
       )}

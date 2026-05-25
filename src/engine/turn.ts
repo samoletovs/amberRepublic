@@ -3,6 +3,8 @@ import { applyEffect, processScheduledEffects, applyCascadingEffects, checkGameO
 import { selectEvents, generateNarrative } from './events';
 import { createRng } from './random';
 import { updatePartyApprovals, updateCoalitionLoyalty, runElection, calculateRatings, getCoalitionSeats, getCoalitionLoyalty, checkCoalitionStability } from './politics';
+import { scheduleEcho, dueEchoes } from './echoes';
+import { generateHeadlines } from './newsfeed';
 
 export interface TurnResult {
   state: GameState;
@@ -51,11 +53,16 @@ export function resolveTurn(
 
   let newState: GameState = { ...state, coalitionCrises: undefined };
 
-  // 1. Apply all choice effects
+  // 1. Apply all choice effects + schedule echoes for flagged choices
+  const newEchoes = [];
   for (const { event, choiceIndex } of decisions) {
     const choice = event.choices[choiceIndex];
     for (const effect of choice.effects) {
       newState = applyEffect(newState, effect, `${event.id}:${choice.label}`, rng);
+    }
+    if (choice.hasEcho) {
+      const echo = scheduleEcho(event, choice, newState.turn, newState.year, newState.quarter, rng);
+      if (echo) newEchoes.push(echo);
     }
     // Mark one-time events
     if (event.oneTime) {
@@ -65,6 +72,10 @@ export function resolveTurn(
       };
     }
   }
+  newState = {
+    ...newState,
+    pendingEchoes: [...(newState.pendingEchoes ?? []), ...newEchoes],
+  };
 
   // 2. Process scheduled effects from previous turns
   newState = processScheduledEffects(newState, rng);
@@ -72,8 +83,13 @@ export function resolveTurn(
   // 3. Apply cascading second-order effects
   newState = applyCascadingEffects(newState, rng);
 
-  // 4. Generate narrative
+  // 3b. Fire any echoes due this turn
+  const { fired, remaining } = dueEchoes(newState.pendingEchoes ?? [], newState.turn);
+  newState = { ...newState, pendingEchoes: remaining };
+
+  // 4. Generate narrative + headlines
   const narrative = generateNarrative(newState, decisions);
+  const headlines = generateHeadlines(newState, decisions, indicatorsBefore, rng);
 
   // 5. Record history
   const record: TurnRecord = {
@@ -84,6 +100,8 @@ export function resolveTurn(
     indicatorsBefore,
     indicatorsAfter: { ...newState.indicators },
     narrative,
+    echoes: fired.map(e => e.narrative),
+    headlines,
   };
 
   // 6. Advance time
