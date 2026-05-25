@@ -81,7 +81,14 @@ export default function EventCard({ event, index, selectedChoice, onChoose, onHo
           return (
             <div
               key={ci}
-              onClick={() => onChoose(ci)}
+              onClick={() => {
+                if (choice.irreversible && selectedChoice !== ci) {
+                  if (!window.confirm(`This decision is permanent.\n\n"${choice.label}"\n\nSome doors will close. Are you sure?`)) {
+                    return;
+                  }
+                }
+                onChoose(ci);
+              }}
               onMouseEnter={() => onHoverChoice?.(ci)}
               onMouseLeave={() => onHoverChoice?.(null)}
               onFocus={() => onHoverChoice?.(ci)}
@@ -89,7 +96,10 @@ export default function EventCard({ event, index, selectedChoice, onChoose, onHo
               role="button"
               tabIndex={0}
               className={`choice-card p-4 ${isSelected ? 'ring-2 ring-amber/40' : ''}`}
-              style={isSelected ? { background: 'rgba(184,134,11,0.06)' } : undefined}
+              style={{
+                ...(isSelected ? { background: 'rgba(184,134,11,0.06)' } : {}),
+                ...(choice.irreversible ? { borderLeft: '3px solid #DC2626' } : {}),
+              }}
             >
               <div className="flex items-start gap-3">
                 <div className={`w-6 h-6 rounded-full border-2 shrink-0 flex items-center justify-center mt-0.5 transition-all ${
@@ -98,7 +108,18 @@ export default function EventCard({ event, index, selectedChoice, onChoose, onHo
                   {isSelected && <span className="text-white text-xs font-bold">✓</span>}
                 </div>
                 <div className="flex-1">
-                  <h4 className="font-semibold text-sm mb-1" style={{ color: '#1C1917' }}>{choice.label}</h4>
+                  <div className="flex items-center gap-1.5 flex-wrap mb-1">
+                    <h4 className="font-semibold text-sm" style={{ color: '#1C1917' }}>{choice.label}</h4>
+                    {choice.irreversible && (
+                      <span
+                        className="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded"
+                        style={{ background: '#DC2626', color: '#FFFFFF' }}
+                        title="This decision cannot be reversed in future quarters."
+                      >
+                        🔒 Permanent
+                      </span>
+                    )}
+                  </div>
                   <p className="text-xs leading-relaxed mb-2" style={{ color: '#78716C' }}>{choice.description}</p>
                   
                   {/* Effect preview — Reigns-style: direction + qualitative magnitude only */}

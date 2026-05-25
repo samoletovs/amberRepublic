@@ -57,6 +57,7 @@ export const economyEvents: GameEvent[] = [
           { indicator: 'foreignInvestment', delta: 12, delay: 5, duration: 0 },
         ],
         hasEcho: true,
+        irreversible: true,
         factionReactions: {
           entrepreneurs: 'love',
           identity: 'cheer',

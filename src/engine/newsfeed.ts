@@ -295,19 +295,26 @@ export function generateHeadlines(
     if (final.length >= 5) break;
   }
 
-  // Ensure at least 3
-  while (final.length < 3 && pool.length > 0) {
-    const fallback = `${OUTLET_VOICES.radioJuris}: ${rng.pick([
-      'Latvia: still here.',
-      'The trams ran. Mostly.',
-      'A pothole on Brīvības iela has its own Twitter account now.',
-    ])}`;
-    if (!seen.has(fallback)) {
-      seen.add(fallback);
-      final.push(fallback);
-    } else {
-      break;
+  // Ensure we always return at least 3 headlines — pad with a deterministic
+  // ambient line from the radio commentator.
+  const FALLBACKS = [
+    'Latvia: still here.',
+    'The trams ran. Mostly.',
+    'A pothole on Brīvības iela has its own Twitter account now.',
+    'A statement is forthcoming. The statement will be measured.',
+    'The trade balance moved. Economists nodded.',
+    'No protests today. Pundits suspect this is itself suspicious.',
+  ];
+  let fallbackIdx = 0;
+  while (final.length < 3) {
+    const text = FALLBACKS[fallbackIdx % FALLBACKS.length];
+    fallbackIdx++;
+    const line = `${OUTLET_VOICES.radioJuris}: ${text}`;
+    if (!seen.has(line)) {
+      seen.add(line);
+      final.push(line);
     }
+    if (fallbackIdx > FALLBACKS.length * 2) break;
   }
 
   return final;

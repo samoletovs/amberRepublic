@@ -2,6 +2,9 @@ import { GameState } from './types';
 import { INDICATORS } from './indicators';
 import { createInitialParliament, calculateRatings } from './politics';
 import { createInitialFactionApproval } from './factions';
+import { createInitialConstitution } from './constitution';
+import { createInitialSuperpowers } from './superpowers';
+import { createInitialDecrees } from './decrees';
 
 /** Latvia 2025 baseline starting state */
 export function createInitialState(seed?: number): GameState {
@@ -76,5 +79,10 @@ export function createInitialState(seed?: number): GameState {
     factionApproval: createInitialFactionApproval(),
     promises: [],
     cynicism: 0,
+    constitution: createInitialConstitution(),
+    activeArcs: [],
+    completedArcs: new Set(),
+    superpowers: createInitialSuperpowers(),
+    decrees: createInitialDecrees(),
   };
 }

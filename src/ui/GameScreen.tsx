@@ -3,10 +3,14 @@ import { GameState, GameEvent } from '../engine/types';
 import { getIndicatorMeta } from '../engine/indicators';
 import { magnitudeOf } from '../engine/magnitudes';
 import { reactionDelta, reactionSymbol, type FactionId } from '../engine/factions';
+import type { PillarId } from '../engine/constitution';
 import type { AIModel } from '../engine/ai';
 import IndicatorPanel from './IndicatorPanel';
 import EventCard from './EventCard';
 import FactionPulse from './FactionPulse';
+import ConstitutionPanel from './ConstitutionPanel';
+import SuperpowerPanel from './SuperpowerPanel';
+import DecreesPanel from './DecreesPanel';
 import FeedbackButton from './FeedbackButton';
 import RatingsBar from './RatingsBar';
 import CoalitionBar from './CoalitionBar';
@@ -22,6 +26,10 @@ interface Props {
   decisions: Map<string, number>;
   onMakeChoice: (eventId: string, choiceIndex: number) => void;
   onEndTurn: () => void;
+  onAdvancePillar: (pillar: PillarId, direction: 1 | -1) => void;
+  onResolveDemand: (demandId: string, optionIdx: number) => void;
+  onEnactDecree: (decreeId: string) => void;
+  onRevokeDecree: (decreeId: string) => void;
   aiMode: boolean;
   onToggleAI: () => void;
   aiModels: AIModel[];
@@ -33,7 +41,7 @@ interface Props {
 
 const QUARTER_NAMES = ['Q1 Jan-Mar', 'Q2 Apr-Jun', 'Q3 Jul-Sep', 'Q4 Oct-Dec'];
 
-export default function GameScreen({ state, events, decisions, onMakeChoice, onEndTurn, aiMode, onToggleAI, aiModels, selectedModel, onSelectModel, onCustomResponse, aiLoading }: Props) {
+export default function GameScreen({ state, events, decisions, onMakeChoice, onEndTurn, onAdvancePillar, onResolveDemand, onEnactDecree, onRevokeDecree, aiMode, onToggleAI, aiModels, selectedModel, onSelectModel, onCustomResponse, aiLoading }: Props) {
   const allDecisionsMade = events.every(e => decisions.has(e.id));
   const lastRecord = state.history[state.history.length - 1];
   const [showIndicators, setShowIndicators] = useState(false);
@@ -155,6 +163,9 @@ export default function GameScreen({ state, events, decisions, onMakeChoice, onE
           {/* Coalition & Ratings */}
           <CoalitionBar parliament={state.parliament} currentTurn={state.turn} />
           <FactionPulse approval={state.factionApproval} preview={previewReactions} />
+          <SuperpowerPanel state={state} onResolve={onResolveDemand} />
+          <ConstitutionPanel state={state} onAdvance={onAdvancePillar} />
+          <DecreesPanel state={state} onEnact={onEnactDecree} onRevoke={onRevokeDecree} />
           {state.coalitionCrises && state.coalitionCrises.length > 0 && (
             <div className="glass-card p-4 fade-in" style={{ background: 'rgba(158,48,57,0.06)', border: '1px solid rgba(158,48,57,0.2)' }}>
               <h3 className="text-sm font-semibold mb-2 uppercase tracking-wider" style={{ color: '#9E3039' }}>

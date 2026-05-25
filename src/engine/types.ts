@@ -2,6 +2,10 @@ import type { Parliament, InternationalRatings, ElectionResult, CoalitionCrisis 
 import type { TraitId } from './traits';
 import type { FactionId, ReactionLevel } from './factions';
 import type { PromiseRecord } from './manifesto';
+import type { ConstitutionState } from './constitution';
+import type { ActiveArc, ArcId } from './arcs';
+import type { SuperpowerState } from './superpowers';
+import type { DecreeState } from './decrees';
 
 // ─── Core Game Types ─────────────────────────────────────────────
 export interface GameState {
@@ -31,6 +35,16 @@ export interface GameState {
   promises: PromiseRecord[];
   /** Permanent voter-cynicism meter — accumulates with broken promises. */
   cynicism: number;
+  /** Frostpunk-style Book of Laws — 4 pillars + Political Capital. */
+  constitution: ConstitutionState;
+  /** Currently-running multi-quarter event arcs (CK3-style storylines). */
+  activeArcs: ActiveArc[];
+  /** Arcs the player has fully completed (won't re-trigger). */
+  completedArcs: Set<ArcId>;
+  /** Tropico-style superpower demand queue (EU/RU/US). */
+  superpowers: SuperpowerState;
+  /** Active toggleable policy decrees (Tropico edicts). */
+  decrees: DecreeState;
 }
 
 export interface ScheduledEffect {
@@ -76,6 +90,12 @@ export interface Choice {
    * approval by the level's delta. Missing factions are unaffected.
    */
   factionReactions?: Partial<Record<FactionId, ReactionLevel>>;
+  /**
+   * Reigns/Frostpunk-style irreversibility flag. The UI shows a broken-chain
+   * badge and a confirmation modal before applying the choice. Choosing here
+   * is final — and rendered visibly so.
+   */
+  irreversible?: boolean;
 }
 
 export type EventCategory = 'economy' | 'security' | 'society' | 'diplomacy' | 'science' | 'crisis' | 'environment' | 'culture' | 'petition';
