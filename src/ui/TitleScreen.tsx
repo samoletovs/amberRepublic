@@ -11,6 +11,10 @@ interface Props {
 export default function TitleScreen({ onStart, onQuiz, onReality, scenarios }: Props) {
   const [showScenarios, setShowScenarios] = useState(false);
 
+  const now = new Date();
+  const currentYear = now.getFullYear();
+  const currentQuarter = Math.floor(now.getMonth() / 3) + 1;
+
   return (
     <div className="min-h-screen flex items-center justify-center p-4 sm:p-8">
       <div className="text-center max-w-xl w-full fade-in">
@@ -28,14 +32,14 @@ export default function TitleScreen({ onStart, onQuiz, onReality, scenarios }: P
         <p className="text-base sm:text-lg mb-1 font-light tracking-wide uppercase" style={{ color: '#9E3039', fontFamily: 'Source Sans 3, sans-serif', letterSpacing: '0.15em' }}>
           A Political Simulation
         </p>
-        <p className="text-sm mb-8" style={{ color: '#78716C' }}>Latvia, 2025 — Win elections to stay in power</p>
+        <p className="text-sm mb-8" style={{ color: '#78716C' }}>Latvia, {currentYear} — Win elections to stay in power</p>
 
         {/* Briefing card */}
         <div className="glass-card p-5 sm:p-6 mb-8 text-left">
           <div className="flex items-center gap-2 mb-4 pb-3" style={{ borderBottom: '1px solid rgba(28,25,23,0.08)' }}>
             <span className="text-lg">📋</span>
             <h3 className="text-sm font-semibold uppercase tracking-wider" style={{ color: '#B8860B', fontFamily: 'Source Sans 3' }}>
-              Situation Briefing — Q1 2025
+              Situation Briefing — Q{currentQuarter} {currentYear}
             </h3>
           </div>
           <p className="text-sm leading-relaxed mb-5" style={{ color: '#3D3731' }}>
