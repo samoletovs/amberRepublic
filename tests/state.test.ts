@@ -2,10 +2,12 @@ import { describe, it, expect } from 'vitest';
 import { createInitialState } from '../src/engine/state';
 
 describe('state — createInitialState', () => {
-  it('creates state with Latvia 2025 baseline values', () => {
+  it('creates state with current-date baseline values', () => {
     const state = createInitialState(42);
-    expect(state.year).toBe(2025);
-    expect(state.quarter).toBe(1);
+    const expectedYear = new Date().getFullYear();
+    const expectedQuarter = Math.floor(new Date().getMonth() / 3) + 1;
+    expect(state.year).toBe(expectedYear);
+    expect(state.quarter).toBe(expectedQuarter);
     expect(state.turn).toBe(0);
     expect(state.gameOver).toBe(false);
     expect(state.seed).toBe(42);
