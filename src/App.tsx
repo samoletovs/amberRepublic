@@ -3,11 +3,19 @@ import { GameState, GameEvent } from './engine/types';
 import { createInitialState } from './engine/state';
 import { startTurn, resolveTurn } from './engine/turn';
 import { applyBudgetAllocationEffects, applyIndicatorOverrides } from './engine/startAdjustments';
+import { INDICATORS } from './engine/indicators';
+import { applyTraitStartBias, type TraitId } from './engine/traits';
+import { applyTraitFactionBias } from './engine/factions';
+import { advancePillar, type PillarId } from './engine/constitution';
+import { resolveDemand } from './engine/superpowers';
+import { enactDecree, revokeDecree } from './engine/decrees';
 import { ALL_EVENTS } from './data';
 import { generateAIEvent, evaluateCustomChoice, getAvailableModels, type AIModel } from './engine/ai';
 import { saveAiEvent, pickSavedEvent } from './engine/savedEvents';
 import { fetchDynamicStartData, fetchHistoricalData, type HistoricalScenario, HISTORICAL_SCENARIOS } from './engine/latviaData';
 import TitleScreen from './ui/TitleScreen';
+import OnboardingScreen from './ui/OnboardingScreen';
+import ManifestoScreen from './ui/ManifestoScreen';
 import GameScreen from './ui/GameScreen';
 import GameOverScreen from './ui/GameOverScreen';
 import QuizScreen from './ui/QuizScreen';
@@ -15,13 +23,14 @@ import BudgetScreen from './ui/BudgetScreen';
 import RealityDashboard from './ui/RealityDashboard';
 import ElectionResultsScreen from './ui/ElectionResultsScreen';
 
-type Screen = 'title' | 'game' | 'gameover' | 'quiz' | 'budget' | 'reality' | 'election';
+type Screen = 'title' | 'onboarding' | 'manifesto' | 'game' | 'gameover' | 'quiz' | 'budget' | 'reality' | 'election';
 
 // Screens that can be navigated to via URL hash
 const HASH_SCREENS: Record<string, Screen> = {
   '#quiz': 'quiz',
   '#reality': 'reality',
   '#game': 'game',
+  '#onboarding': 'onboarding',
 };
 
 function getScreenFromHash(): Screen {
@@ -70,36 +79,34 @@ export default function App() {
     });
   }, []);
 
-  const generateEvents = useCallback(async (state: GameState): Promise<GameEvent[]> => {
-    const { events: staticEvents } = startTurn(state, ALL_EVENTS);
+  const generateEvents = useCallback(async (state: GameState): Promise<{ events: GameEvent[]; nextState: GameState }> => {
+    const { state: nextState, events: staticEvents } = startTurn(state, ALL_EVENTS);
 
     if (!aiMode || aiModels.length === 0) {
-      return staticEvents;
+      return { events: staticEvents, nextState };
     }
 
     // Hybrid: 1 static + 1 AI-generated event
     setAiLoading(true);
     try {
-      // Try saved AI events first (from previous games)
       const recentTitles = state.history
         .slice(-5)
         .flatMap(h => h.events.map(e => e.event.title));
       const saved = pickSavedEvent(state, recentTitles);
       if (saved) {
-        return [staticEvents[0], saved].filter(Boolean);
+        return { events: [staticEvents[0], saved].filter(Boolean), nextState };
       }
 
-      // No suitable saved event — generate a new one via API
       const aiEvent = await generateAIEvent(state, selectedModel);
       if (aiEvent) {
-        return [staticEvents[0], aiEvent as GameEvent].filter(Boolean);
+        return { events: [staticEvents[0], aiEvent as GameEvent].filter(Boolean), nextState };
       }
     } catch {
       // Fallback to all static
     } finally {
       setAiLoading(false);
     }
-    return staticEvents;
+    return { events: staticEvents, nextState };
   }, [aiMode, aiModels, selectedModel]);
 
   const handleStartGame = useCallback(async (scenario?: HistoricalScenario) => {
@@ -122,8 +129,36 @@ export default function App() {
     }
 
     setPendingState(state);
-    setScreen('budget');
+    setScreen('onboarding');
   }, []);
+
+  const handleTraitsConfirm = useCallback((traits: TraitId[]) => {
+    const state = pendingState;
+    if (!state) return;
+    const biased = {
+      ...state,
+      traits,
+      indicators: applyTraitStartBias(state.indicators, traits),
+      factionApproval: applyTraitFactionBias(state.factionApproval, traits),
+    };
+    setPendingState(biased);
+    setScreen('manifesto');
+  }, [pendingState]);
+
+  const handleManifestoConfirm = useCallback((promiseIds: string[]) => {
+    const state = pendingState;
+    if (!state) return;
+    const termIndex = state.parliament.electionHistory.length; // 0 for first term
+    const biased = {
+      ...state,
+      promises: [
+        ...state.promises,
+        ...promiseIds.map(id => ({ promiseId: id, termIndex })),
+      ],
+    };
+    setPendingState(biased);
+    setScreen('budget');
+  }, [pendingState]);
 
   const handleBudgetAllocate = useCallback(async (allocations: Record<string, number>) => {
     const state = pendingState;
@@ -135,7 +170,8 @@ export default function App() {
     };
 
     setGameState(nextState);
-    const events = await generateEvents(nextState);
+    const { events, nextState: turnState } = await generateEvents(nextState);
+    setGameState(turnState);
     setCurrentEvents(events);
     setDecisions(new Map());
     setScreen('game');
@@ -146,7 +182,8 @@ export default function App() {
     if (!state) return;
     const nextState = { ...state, indicators: { ...state.indicators } };
     setGameState(nextState);
-    const events = await generateEvents(nextState);
+    const { events, nextState: turnState } = await generateEvents(nextState);
+    setGameState(turnState);
     setCurrentEvents(events);
     setDecisions(new Map());
     setScreen('game');
@@ -236,7 +273,8 @@ export default function App() {
       return;
     }
 
-    const events = await generateEvents(newState);
+    const { events, nextState: turnState } = await generateEvents(newState);
+    setGameState(turnState);
     setCurrentEvents(events);
     setDecisions(new Map());
   }, [gameState, currentEvents, decisions, generateEvents]);
@@ -248,16 +286,111 @@ export default function App() {
     setDecisions(new Map());
   }, []);
 
+  const handleAdvancePillar = useCallback((pillar: PillarId, direction: 1 | -1) => {
+    setGameState(prev => {
+      if (!prev) return prev;
+      const { next, step } = advancePillar(prev.constitution, pillar, direction);
+      if (!step) return prev;
+      // Apply step effects to indicators + faction bias
+      const newIndicators = { ...prev.indicators };
+      for (const eff of step.effects) {
+        const meta = INDICATORS.find(i => i.key === eff.indicator);
+        const cur = newIndicators[eff.indicator] ?? 0;
+        const min = meta?.min ?? 0;
+        const max = meta?.max ?? 100;
+        newIndicators[eff.indicator] = Math.min(max, Math.max(min, cur + eff.delta));
+      }
+      const newFaction = step.factionBias
+        ? Object.entries(step.factionBias).reduce((acc, [fid, delta]) => {
+            const cur = acc[fid as keyof typeof acc] ?? 50;
+            acc[fid as keyof typeof acc] = Math.max(0, Math.min(100, cur + delta));
+            return acc;
+          }, { ...prev.factionApproval })
+        : prev.factionApproval;
+      return { ...prev, constitution: next, indicators: newIndicators, factionApproval: newFaction };
+    });
+  }, []);
+
+  const handleResolveDemand = useCallback((demandId: string, optionIdx: number) => {
+    setGameState(prev => {
+      if (!prev) return prev;
+      const { state: nextSp, option } = resolveDemand(prev.superpowers, demandId, optionIdx, prev.turn);
+      if (!option) return prev;
+      // Apply option effects to indicators
+      const newIndicators = { ...prev.indicators };
+      for (const eff of option.effects) {
+        const meta = INDICATORS.find(i => i.key === eff.indicator);
+        const cur = newIndicators[eff.indicator] ?? 0;
+        const min = meta?.min ?? 0;
+        const max = meta?.max ?? 100;
+        newIndicators[eff.indicator] = Math.min(max, Math.max(min, cur + eff.delta));
+      }
+      // Apply faction reactions
+      const newFaction = { ...prev.factionApproval };
+      if (option.factionReactions) {
+        const reactionVal: Record<string, number> = { love: 8, cheer: 4, meh: 0, frown: -4, rage: -8 };
+        for (const [fid, level] of Object.entries(option.factionReactions)) {
+          const k = fid as keyof typeof newFaction;
+          newFaction[k] = Math.max(0, Math.min(100, (newFaction[k] ?? 50) + reactionVal[level]));
+        }
+      }
+      return { ...prev, superpowers: nextSp, indicators: newIndicators, factionApproval: newFaction };
+    });
+  }, []);
+
+  const handleEnactDecree = useCallback((decreeId: string) => {
+    setGameState(prev => {
+      if (!prev) return prev;
+      const { state: next, def } = enactDecree(prev, decreeId);
+      if (!def) return prev;
+      // Apply enact-time faction reactions
+      let factionApproval = prev.factionApproval;
+      if (def.factionReactions) {
+        factionApproval = { ...prev.factionApproval };
+        const reactionVal: Record<string, number> = { love: 8, cheer: 4, meh: 0, frown: -4, rage: -8 };
+        for (const [fid, level] of Object.entries(def.factionReactions)) {
+          const k = fid as keyof typeof factionApproval;
+          factionApproval[k] = Math.max(0, Math.min(100, (factionApproval[k] ?? 50) + reactionVal[level]));
+        }
+      }
+      return { ...next, factionApproval };
+    });
+  }, []);
+
+  const handleRevokeDecree = useCallback((decreeId: string) => {
+    setGameState(prev => {
+      if (!prev) return prev;
+      const { state: next } = revokeDecree(prev, decreeId);
+      return next;
+    });
+  }, []);
+
   const handleElectionContinue = useCallback(async () => {
     if (!gameState) return;
-    // Clear election pending flag and continue
+    // Clear election pending flag and route to manifesto for new term
     const updatedState = { ...gameState, electionPending: false, lastElectionResult: undefined };
-    setGameState(updatedState);
-    const events = await generateEvents(updatedState);
+    setPendingState(updatedState);
+    setScreen('manifesto');
+  }, [gameState]);
+
+  const handleNewTermManifestoConfirm = useCallback(async (promiseIds: string[]) => {
+    if (!pendingState) return;
+    const termIndex = pendingState.parliament.electionHistory.length;
+    const finalState = {
+      ...pendingState,
+      promises: [
+        ...pendingState.promises,
+        ...promiseIds.map(id => ({ promiseId: id, termIndex })),
+      ],
+    };
+    setGameState(finalState);
+    setPendingState(null);
+    const { events, nextState: turnState } = await generateEvents(finalState);
+    setGameState(turnState);
     setCurrentEvents(events);
     setDecisions(new Map());
     setScreen('game');
-  }, [gameState, generateEvents]);
+  }, [pendingState, generateEvents]);
 
   const handleQuiz = useCallback(() => {
     setScreen('quiz');
@@ -274,6 +407,18 @@ export default function App() {
         />
       )}
       {screen === 'quiz' && <QuizScreen onBack={handleRestart} />}
+      {screen === 'onboarding' && (
+        <OnboardingScreen
+          onConfirm={handleTraitsConfirm}
+          onBack={() => setScreen('title')}
+        />
+      )}
+      {screen === 'manifesto' && (
+        <ManifestoScreen
+          onConfirm={gameState ? handleNewTermManifestoConfirm : handleManifestoConfirm}
+          termNumber={(pendingState?.parliament.electionHistory.length ?? 0) + (gameState ? 0 : 1)}
+        />
+      )}
       {screen === 'budget' && (
         <BudgetScreen onAllocate={handleBudgetAllocate} onSkip={handleBudgetSkip} />
       )}
@@ -285,6 +430,10 @@ export default function App() {
           decisions={decisions}
           onMakeChoice={handleMakeChoice}
           onEndTurn={handleEndTurn}
+          onAdvancePillar={handleAdvancePillar}
+          onResolveDemand={handleResolveDemand}
+          onEnactDecree={handleEnactDecree}
+          onRevokeDecree={handleRevokeDecree}
           aiMode={aiMode}
           onToggleAI={() => setAiMode(m => !m)}
           aiModels={aiModels}

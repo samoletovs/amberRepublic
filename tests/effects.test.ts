@@ -56,10 +56,23 @@ describe('effects — applyEffect', () => {
   it('applies immediate effect to indicator', () => {
     const state = makeState();
     const rng = createRng(42);
+    const effect: Effect = { indicator: 'gdp', delta: 5, delay: 0, duration: 0 };
+    const newState = applyEffect(state, effect, 'test', rng);
+    expect(newState.indicators.gdp).toBeGreaterThan(state.indicators.gdp);
+  });
+
+  it('bridges publicHappiness writes onto publicConfidence + socialStrain', () => {
+    const state = makeState();
+    const rng = createRng(42);
+    const before = {
+      conf: state.indicators.publicConfidence,
+      strain: state.indicators.socialStrain,
+    };
     const effect: Effect = { indicator: 'publicHappiness', delta: 5, delay: 0, duration: 0 };
     const newState = applyEffect(state, effect, 'test', rng);
-    // Delta is varied ±15%, so check it moved in the right direction
-    expect(newState.indicators.publicHappiness).toBeGreaterThan(state.indicators.publicHappiness);
+    // Confidence should go up, strain should go down.
+    expect(newState.indicators.publicConfidence).toBeGreaterThan(before.conf);
+    expect(newState.indicators.socialStrain).toBeLessThan(before.strain);
   });
 
   it('schedules delayed effect', () => {
@@ -75,14 +88,14 @@ describe('effects — applyEffect', () => {
     const state = makeState();
     const rng = createRng(42);
     const effect: Effect = {
-      indicator: 'publicHappiness',
+      indicator: 'gdp',
       delta: 10,
       delay: 0,
       duration: 0,
       condition: { indicator: 'gdp', op: '>', value: 1000 }, // impossible
     };
     const newState = applyEffect(state, effect, 'test', rng);
-    expect(newState.indicators.publicHappiness).toBe(state.indicators.publicHappiness);
+    expect(newState.indicators.gdp).toBe(state.indicators.gdp);
   });
 });
 
@@ -90,7 +103,7 @@ describe('effects — processScheduledEffects', () => {
   it('fires scheduled effects when turnsRemaining reaches 1', () => {
     const state = makeState({
       scheduledEffects: [{
-        indicator: 'publicHappiness',
+        indicator: 'gdp',
         delta: 5,
         turnsRemaining: 1,
         duration: 0,
@@ -99,7 +112,7 @@ describe('effects — processScheduledEffects', () => {
     });
     const rng = createRng(42);
     const newState = processScheduledEffects(state, rng);
-    expect(newState.indicators.publicHappiness).toBeGreaterThan(state.indicators.publicHappiness);
+    expect(newState.indicators.gdp).toBeGreaterThan(state.indicators.gdp);
     expect(newState.scheduledEffects.length).toBe(0);
   });
 

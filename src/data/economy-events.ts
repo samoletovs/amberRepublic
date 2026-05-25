@@ -9,6 +9,7 @@ export const economyEvents: GameEvent[] = [
     category: 'economy',
     weight: 8,
     oneTime: true,
+    highStakes: true,
     flavor: 'The Estonians are already designing their station\'s gift shop. Lithuania has started selling tickets. Latvia is still debating the route.',
     choices: [
       {
@@ -21,6 +22,13 @@ export const economyEvents: GameEvent[] = [
           { indicator: 'euStanding', delta: 5, delay: 2, duration: 0 },
           { indicator: 'portActivity', delta: 6, delay: 4, duration: 0 },
         ],
+        hasEcho: true,
+        factionReactions: {
+          entrepreneurs: 'cheer',
+          reformBloc: 'love',
+          green: 'frown',
+          identity: 'meh',
+        },
         humor: 'The infrastructure minister starts wearing a conductor\'s hat to cabinet meetings.',
       },
       {
@@ -31,6 +39,11 @@ export const economyEvents: GameEvent[] = [
           { indicator: 'euStanding', delta: -4, delay: 1, duration: 0 },
           { indicator: 'foreignInvestment', delta: -3, delay: 2, duration: 0 },
         ],
+        factionReactions: {
+          entrepreneurs: 'frown',
+          reformBloc: 'rage',
+          identity: 'cheer',
+        },
         humor: 'The train will have a station in Latvia. It just won\'t stop there very often.',
       },
       {
@@ -43,6 +56,14 @@ export const economyEvents: GameEvent[] = [
           { indicator: 'euStanding', delta: 3, delay: 3, duration: 0 },
           { indicator: 'foreignInvestment', delta: 12, delay: 5, duration: 0 },
         ],
+        hasEcho: true,
+        irreversible: true,
+        factionReactions: {
+          entrepreneurs: 'love',
+          identity: 'cheer',
+          reformBloc: 'cheer',
+          socialDems: 'frown',
+        },
         humor: 'Latvia: "We meant to put the station in our country." Estonia: "...yes, that\'s how railways work."',
       },
     ],
@@ -56,6 +77,7 @@ export const economyEvents: GameEvent[] = [
     category: 'economy',
     weight: 7,
     oneTime: false,
+    highStakes: true,
     choices: [
       {
         label: 'Return to flat tax',
@@ -67,6 +89,7 @@ export const economyEvents: GameEvent[] = [
           { indicator: 'publicHappiness', delta: -3, delay: 1, duration: 0 },
           { indicator: 'taxBurden', delta: -5, delay: 0, duration: 0 },
         ],
+        hasEcho: true,
         humor: 'Oligarchs in Jūrmala celebrate with champagne. Hospital queues grow slightly longer.',
       },
       {
@@ -80,6 +103,7 @@ export const economyEvents: GameEvent[] = [
           { indicator: 'publicHappiness', delta: 2, delay: 1, duration: 0 },
           { indicator: 'taxBurden', delta: 5, delay: 0, duration: 0 },
         ],
+        hasEcho: true,
         humor: 'A prominent businessman tweets from his new Tallinn office: "Estonia is beautiful this time of year."',
       },
       {

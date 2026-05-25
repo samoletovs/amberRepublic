@@ -1,9 +1,16 @@
 import { useState } from 'react';
 import { GameState, GameEvent } from '../engine/types';
 import { getIndicatorMeta } from '../engine/indicators';
+import { magnitudeOf } from '../engine/magnitudes';
+import { reactionDelta, reactionSymbol, type FactionId } from '../engine/factions';
+import type { PillarId } from '../engine/constitution';
 import type { AIModel } from '../engine/ai';
 import IndicatorPanel from './IndicatorPanel';
 import EventCard from './EventCard';
+import FactionPulse from './FactionPulse';
+import ConstitutionPanel from './ConstitutionPanel';
+import SuperpowerPanel from './SuperpowerPanel';
+import DecreesPanel from './DecreesPanel';
 import FeedbackButton from './FeedbackButton';
 import RatingsBar from './RatingsBar';
 import CoalitionBar from './CoalitionBar';
@@ -19,6 +26,10 @@ interface Props {
   decisions: Map<string, number>;
   onMakeChoice: (eventId: string, choiceIndex: number) => void;
   onEndTurn: () => void;
+  onAdvancePillar: (pillar: PillarId, direction: 1 | -1) => void;
+  onResolveDemand: (demandId: string, optionIdx: number) => void;
+  onEnactDecree: (decreeId: string) => void;
+  onRevokeDecree: (decreeId: string) => void;
   aiMode: boolean;
   onToggleAI: () => void;
   aiModels: AIModel[];
@@ -30,12 +41,27 @@ interface Props {
 
 const QUARTER_NAMES = ['Q1 Jan-Mar', 'Q2 Apr-Jun', 'Q3 Jul-Sep', 'Q4 Oct-Dec'];
 
-export default function GameScreen({ state, events, decisions, onMakeChoice, onEndTurn, aiMode, onToggleAI, aiModels, selectedModel, onSelectModel, onCustomResponse, aiLoading }: Props) {
+export default function GameScreen({ state, events, decisions, onMakeChoice, onEndTurn, onAdvancePillar, onResolveDemand, onEnactDecree, onRevokeDecree, aiMode, onToggleAI, aiModels, selectedModel, onSelectModel, onCustomResponse, aiLoading }: Props) {
   const allDecisionsMade = events.every(e => decisions.has(e.id));
   const lastRecord = state.history[state.history.length - 1];
   const [showIndicators, setShowIndicators] = useState(false);
+  const [hoveredChoice, setHoveredChoice] = useState<{ eventId: string; choiceIndex: number } | null>(null);
   const termNumber = state.parliament.electionHistory.length + 1;
   const untilElection = turnsUntilElection(state);
+
+  // Compute preview reactions for the currently-hovered choice — used by FactionPulse.
+  const previewReactions: Partial<Record<FactionId, { delta: number; level: string; symbol: string }>> = (() => {
+    if (!hoveredChoice) return {};
+    const ev = events.find(e => e.id === hoveredChoice.eventId);
+    if (!ev) return {};
+    const ch = ev.choices[hoveredChoice.choiceIndex];
+    if (!ch?.factionReactions) return {};
+    const out: Partial<Record<FactionId, { delta: number; level: string; symbol: string }>> = {};
+    for (const [fid, level] of Object.entries(ch.factionReactions) as [FactionId, 'love' | 'cheer' | 'meh' | 'frown' | 'rage'][]) {
+      out[fid] = { delta: reactionDelta(level), level, symbol: reactionSymbol(level) };
+    }
+    return out;
+  })();
 
   return (
     <div className="min-h-screen p-2 sm:p-3 md:p-6 pb-24">
@@ -136,6 +162,10 @@ export default function GameScreen({ state, events, decisions, onMakeChoice, onE
         <main className="flex-1 space-y-3">
           {/* Coalition & Ratings */}
           <CoalitionBar parliament={state.parliament} currentTurn={state.turn} />
+          <FactionPulse approval={state.factionApproval} preview={previewReactions} />
+          <SuperpowerPanel state={state} onResolve={onResolveDemand} />
+          <ConstitutionPanel state={state} onAdvance={onAdvancePillar} />
+          <DecreesPanel state={state} onEnact={onEnactDecree} onRevoke={onRevokeDecree} />
           {state.coalitionCrises && state.coalitionCrises.length > 0 && (
             <div className="glass-card p-4 fade-in" style={{ background: 'rgba(158,48,57,0.06)', border: '1px solid rgba(158,48,57,0.2)' }}>
               <h3 className="text-sm font-semibold mb-2 uppercase tracking-wider" style={{ color: '#9E3039' }}>
@@ -150,11 +180,32 @@ export default function GameScreen({ state, events, decisions, onMakeChoice, onE
           )}
           <RatingsBar ratings={state.ratings} />
 
-          {/* Previous turn narrative */}
+          {/* Previous turn narrative + echoes + headlines */}
           {lastRecord && (
             <div className="glass-card p-4 fade-in">
               <h3 className="text-sm font-semibold mb-2 uppercase tracking-wider" style={{ color: '#B8860B' }}>📜 Last Quarter</h3>
               <p className="text-sm leading-relaxed" style={{ color: '#3D3731' }}>{lastRecord.narrative}</p>
+              {/* Echoes — delayed consequences from past decisions */}
+              {lastRecord.echoes && lastRecord.echoes.length > 0 && (
+                <div className="mt-3 pt-3 space-y-2" style={{ borderTop: '1px dashed rgba(184,134,11,0.25)' }}>
+                  <h4 className="text-[10px] font-bold uppercase tracking-wider" style={{ color: '#B8860B' }}>🔁 Echoes from earlier quarters</h4>
+                  {lastRecord.echoes.map((e, i) => (
+                    <p key={i} className="text-xs italic leading-relaxed" style={{ color: '#3D3731' }}>{e}</p>
+                  ))}
+                </div>
+              )}
+              {/* Headlines — Tropico-style commentary */}
+              {lastRecord.headlines && lastRecord.headlines.length > 0 && (
+                <div className="mt-3 pt-3 space-y-1" style={{ borderTop: '1px dashed rgba(158,48,57,0.18)' }}>
+                  <h4 className="text-[10px] font-bold uppercase tracking-wider" style={{ color: '#9E3039' }}>📰 The Morning Papers</h4>
+                  {lastRecord.headlines.map((h, i) => (
+                    <p key={i} className="text-xs leading-snug" style={{ color: '#3D3731' }}>
+                      <span className="font-semibold" style={{ color: '#9E3039' }}>{h.split(':')[0]}:</span>
+                      <span>{h.substring(h.indexOf(':') + 1)}</span>
+                    </p>
+                  ))}
+                </div>
+              )}
               {/* Show indicator changes */}
               <div className="mt-3 flex flex-wrap gap-2">
                 {Object.entries(lastRecord.indicatorsAfter).map(([key, val]) => {
@@ -166,13 +217,14 @@ export default function GameScreen({ state, events, decisions, onMakeChoice, onE
                   if (!meta) return null;
                   const isGood = (meta.goodDirection === 'up' && diff > 0) || 
                                  (meta.goodDirection === 'down' && diff < 0);
+                  const mag = magnitudeOf(key, diff);
                   return (
                     <span key={key} className={`text-xs px-2 py-1 rounded-full ${
                       isGood ? 'bg-green-500/10 text-green-600' : 
                       meta.goodDirection === 'neutral' ? 'bg-blue-500/10 text-blue-500' :
                       'bg-red-500/10 text-red-500'
                     }`}>
-                      {meta.emoji} {meta.name} {diff > 0 ? '↑' : '↓'}{Math.abs(diff).toFixed(1)}
+                      {meta.emoji} {meta.name} {diff > 0 ? '↑' : '↓'} {mag}
                     </span>
                   );
                 })}
@@ -192,9 +244,11 @@ export default function GameScreen({ state, events, decisions, onMakeChoice, onE
                 index={i}
                 selectedChoice={decisions.get(event.id)}
                 onChoose={(choiceIndex) => onMakeChoice(event.id, choiceIndex)}
+                onHoverChoice={(choiceIndex) => setHoveredChoice(choiceIndex === null ? null : { eventId: event.id, choiceIndex })}
                 aiMode={aiMode}
                 onCustomResponse={(text) => onCustomResponse(event.id, text)}
                 customResponseLoading={aiLoading}
+                turnSeed={state.turn}
               />
             ))}
           </div>
