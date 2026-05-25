@@ -153,7 +153,8 @@ export interface Legacy {
 }
 
 function paragraphOpener(s: GameState): string {
-  const yrs = s.year - 2025;
+  const startYear = new Date().getFullYear();
+  const yrs = s.year - startYear;
   if (yrs <= 1) return `Your tenure was brief — ${yrs <= 0 ? 'less than a year' : 'one short year'}, but historians have made a small industry of asking what went wrong.`;
   if (yrs <= 4) return `Your single term — ${yrs} years — sits in the records as a self-contained episode. The pundits still argue about whether it was a beginning, an interruption, or a warning.`;
   if (yrs <= 8) return `Two terms in office. Long enough to set a direction. Short enough that the next government could change it. They did.`;

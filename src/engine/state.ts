@@ -6,7 +6,15 @@ import { createInitialConstitution } from './constitution';
 import { createInitialSuperpowers } from './superpowers';
 import { createInitialDecrees } from './decrees';
 
-/** Latvia 2025 baseline starting state */
+function currentYearQuarter(): { year: number; quarter: number } {
+  const now = new Date();
+  return {
+    year: now.getFullYear(),
+    quarter: Math.floor(now.getMonth() / 3) + 1,
+  };
+}
+
+/** Latvia current-date baseline starting state */
 export function createInitialState(seed?: number): GameState {
   const s = seed ?? Math.floor(Math.random() * 2147483647);
   const indicators: Record<string, number> = {
@@ -61,10 +69,12 @@ export function createInitialState(seed?: number): GameState {
     }
   }
 
+  const { year: startYear, quarter: startQuarter } = currentYearQuarter();
+
   return {
     turn: 0,
-    year: 2025,
-    quarter: 1,
+    year: startYear,
+    quarter: startQuarter,
     indicators,
     scheduledEffects: [],
     history: [],
