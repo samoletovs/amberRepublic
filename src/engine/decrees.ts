@@ -129,7 +129,7 @@ export const DECREES: DecreeDef[] = [
     name: 'KNAB Independence Charter',
     description: 'Anti-corruption agency reports directly to Saeima. KNAB hires faster. Procurement officers update their CVs.',
     enactCost: 6,
-    revokeCost: 10,
+    revokeCost: 8,
     perQuarter: [
       { indicator: 'corruptionLevel', delta: -0.4 },
       { indicator: 'mediaTrust', delta: 0.3 },
@@ -156,7 +156,7 @@ export const DECREES: DecreeDef[] = [
     name: 'Song Festival Trust Fund',
     description: 'Permanent endowment for the Song & Dance Festival. National identity index quietly thanks you every June.',
     enactCost: 3,
-    revokeCost: 8,
+    revokeCost: 5,
     perQuarter: [
       { indicator: 'nationalIdentity', delta: 0.3 },
       { indicator: 'publicConfidence', delta: 0.2 },

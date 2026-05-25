@@ -228,7 +228,7 @@ export function resolveTurn(
   // 9b. Accrue Political Capital each quarter (bonus from reform position).
   const civilBonus = (newState.constitution?.positions.civil ?? 0) > 0 ? 1 : 0;
   newState.constitution = newState.constitution
-    ? { ...newState.constitution, politicalCapital: Math.min(40, newState.constitution.politicalCapital + 1 + civilBonus) }
+    ? { ...newState.constitution, politicalCapital: Math.min(40, newState.constitution.politicalCapital + 2 + civilBonus) }
     : newState.constitution;
 
   // 9c. Roll & expire superpower demands
