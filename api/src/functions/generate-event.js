@@ -1,5 +1,8 @@
 const { app } = require('@azure/functions');
 const { callLLM, getAvailableModels } = require('../llm.js');
+const { checkRateLimit, checkBudget, recordEstimatedCost } = require('../guardrails.js');
+
+const MAX_TOKENS = 1024;
 
 const SYSTEM_PROMPT = `You are at the heart of "Amber Republic," a political simulation game set in modern Latvia (2025-2035). The player is Prime Minister navigating real Latvian politics.
 
@@ -42,6 +45,11 @@ app.http('generate-event', {
   methods: ['POST'],
   authLevel: 'anonymous',
   handler: async (request) => {
+    const rl = checkRateLimit(request);
+    if (rl) return rl;
+    const bg = checkBudget();
+    if (bg) return bg;
+
     const available = getAvailableModels();
     if (available.length === 0) {
       return { status: 503, jsonBody: { error: 'No AI provider configured' } };
@@ -58,10 +66,11 @@ Recent events to AVOID repeating: ${recentEventTitles.join(', ') || 'none yet'}
 
 Generate ONE new political event for this quarter. Make it topical to the current state — if unemployment is high, maybe a labor issue; if Russia relations are tense, maybe a border incident. Be creative and specific to Latvia.`;
 
-      const result = await callLLM(SYSTEM_PROMPT, userPrompt, model || null, 1024);
+      const result = await callLLM(SYSTEM_PROMPT, userPrompt, model || null, MAX_TOKENS);
       if (!result) {
         return { status: 503, jsonBody: { error: 'All LLM providers failed' } };
       }
+      recordEstimatedCost(result.model, MAX_TOKENS);
 
       const jsonStr = result.text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
       const event = JSON.parse(jsonStr);

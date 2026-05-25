@@ -1,5 +1,8 @@
 const { app } = require('@azure/functions');
 const { callLLM, getAvailableModels } = require('../llm.js');
+const { checkRateLimit, checkBudget, recordEstimatedCost } = require('../guardrails.js');
+
+const MAX_TOKENS = 512;
 
 const SYSTEM_PROMPT = `You are the consequence engine for "Amber Republic," a political simulation game set in Latvia. The player typed a custom response to a political event instead of choosing a predefined option.
 
@@ -27,6 +30,11 @@ app.http('evaluate-choice', {
   methods: ['POST'],
   authLevel: 'anonymous',
   handler: async (request) => {
+    const rl = checkRateLimit(request);
+    if (rl) return rl;
+    const bg = checkBudget();
+    if (bg) return bg;
+
     const available = getAvailableModels();
     if (available.length === 0) {
       return { status: 503, jsonBody: { error: 'No AI provider configured' } };
@@ -51,10 +59,11 @@ Current state context: GDP Growth ${indicators.gdpGrowth ?? 0}%, Unemployment ${
 
 Evaluate this response. What realistically happens in Latvia? Affect 3-6 indicators. Be creative but fair.`;
 
-      const result = await callLLM(SYSTEM_PROMPT, userPrompt, model || null, 512);
+      const result = await callLLM(SYSTEM_PROMPT, userPrompt, model || null, MAX_TOKENS);
       if (!result) {
         return { status: 503, jsonBody: { error: 'All LLM providers failed' } };
       }
+      recordEstimatedCost(result.model, MAX_TOKENS);
 
       const jsonStr = result.text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
       const evaluation = JSON.parse(jsonStr);
