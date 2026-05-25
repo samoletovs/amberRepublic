@@ -48,11 +48,11 @@ export const PILLARS: PillarDef[] = [
     axisLeft: 'State-Led',
     axisRight: 'Free Market',
     steps: {
-      [-2]: { position: -2, label: 'State-Led Industry', cost: 12, description: 'Public ownership of key sectors. Investment banks frown.', effects: [{ indicator: 'foreignInvestment', delta: -8 }, { indicator: 'gdpGrowth', delta: -0.5 }, { indicator: 'socialCohesion', delta: 4 }], factionBias: { socialDems: 10, entrepreneurs: -10 } },
-      [-1]: { position: -1, label: 'Strong Public Sector', cost: 6, description: 'Tilt the mixed economy further to the state side.', effects: [{ indicator: 'healthcareQuality', delta: 4 }, { indicator: 'foreignInvestment', delta: -4 }], factionBias: { socialDems: 5, entrepreneurs: -4 } },
+      [-2]: { position: -2, label: 'State-Led Industry', cost: 8, description: 'Public ownership of key sectors. Investment banks frown.', effects: [{ indicator: 'foreignInvestment', delta: -8 }, { indicator: 'gdpGrowth', delta: -0.5 }, { indicator: 'socialCohesion', delta: 4 }], factionBias: { socialDems: 10, entrepreneurs: -10 } },
+      [-1]: { position: -1, label: 'Strong Public Sector', cost: 3, description: 'Tilt the mixed economy further to the state side.', effects: [{ indicator: 'healthcareQuality', delta: 4 }, { indicator: 'foreignInvestment', delta: -4 }], factionBias: { socialDems: 5, entrepreneurs: -4 } },
       [0]: { position: 0, label: 'Mixed Economy', cost: 0, description: 'The default Latvian compromise. Everyone is mildly dissatisfied.', effects: [] },
-      [1]: { position: 1, label: 'Business-Friendly', cost: 6, description: 'Cut red tape, deregulate strategic sectors.', effects: [{ indicator: 'foreignInvestment', delta: 6 }, { indicator: 'taxBurden', delta: -3 }], factionBias: { entrepreneurs: 6, socialDems: -3 } },
-      [2]: { position: 2, label: 'Full Free Market', cost: 12, description: 'Privatise everything that does not move. Brussels asks pointed questions.', effects: [{ indicator: 'foreignInvestment', delta: 12 }, { indicator: 'taxBurden', delta: -6 }, { indicator: 'healthcareQuality', delta: -5 }], factionBias: { entrepreneurs: 12, socialDems: -10 } },
+      [1]: { position: 1, label: 'Business-Friendly', cost: 3, description: 'Cut red tape, deregulate strategic sectors.', effects: [{ indicator: 'foreignInvestment', delta: 6 }, { indicator: 'taxBurden', delta: -3 }], factionBias: { entrepreneurs: 6, socialDems: -3 } },
+      [2]: { position: 2, label: 'Full Free Market', cost: 8, description: 'Privatise everything that does not move. Brussels asks pointed questions.', effects: [{ indicator: 'foreignInvestment', delta: 12 }, { indicator: 'taxBurden', delta: -6 }, { indicator: 'healthcareQuality', delta: -5 }], factionBias: { entrepreneurs: 12, socialDems: -10 } },
     },
   },
   {
@@ -62,11 +62,11 @@ export const PILLARS: PillarDef[] = [
     axisLeft: 'Neutral Pragmatic',
     axisRight: 'Strict Euro-Atlantic',
     steps: {
-      [-2]: { position: -2, label: 'Active Non-Alignment', cost: 14, description: 'Hedging between East and West. NATO sends carefully-worded letters.', effects: [{ indicator: 'natoRelations', delta: -15 }, { indicator: 'russiaRelations', delta: 6 }, { indicator: 'euStanding', delta: -10 }], factionBias: { natoBloc: -15 } },
-      [-1]: { position: -1, label: 'Quiet Diplomacy', cost: 6, description: 'Less rhetoric, more back-channels.', effects: [{ indicator: 'natoRelations', delta: -5 }], factionBias: { natoBloc: -5 } },
+      [-2]: { position: -2, label: 'Active Non-Alignment', cost: 10, description: 'Hedging between East and West. NATO sends carefully-worded letters.', effects: [{ indicator: 'natoRelations', delta: -15 }, { indicator: 'russiaRelations', delta: 6 }, { indicator: 'euStanding', delta: -10 }], factionBias: { natoBloc: -15 } },
+      [-1]: { position: -1, label: 'Quiet Diplomacy', cost: 3, description: 'Less rhetoric, more back-channels.', effects: [{ indicator: 'natoRelations', delta: -5 }], factionBias: { natoBloc: -5 } },
       [0]: { position: 0, label: 'Standard Alignment', cost: 0, description: 'EU and NATO member doing its part. No surprises.', effects: [] },
-      [1]: { position: 1, label: 'Forward Atlanticism', cost: 6, description: 'Lean into the alliance. Send the F-35 wishlist again.', effects: [{ indicator: 'natoRelations', delta: 6 }, { indicator: 'militaryReadiness', delta: 4 }], factionBias: { natoBloc: 6, reformBloc: 4 } },
-      [2]: { position: 2, label: 'Frontline State Doctrine', cost: 14, description: 'Defence-first foreign policy. The Eastern Brigade gets a budget.', effects: [{ indicator: 'natoRelations', delta: 12 }, { indicator: 'militaryReadiness', delta: 10 }, { indicator: 'russiaRelations', delta: -10 }], factionBias: { natoBloc: 15, reformBloc: 4 } },
+      [1]: { position: 1, label: 'Forward Atlanticism', cost: 3, description: 'Lean into the alliance. Send the F-35 wishlist again.', effects: [{ indicator: 'natoRelations', delta: 6 }, { indicator: 'militaryReadiness', delta: 4 }], factionBias: { natoBloc: 6, reformBloc: 4 } },
+      [2]: { position: 2, label: 'Frontline State Doctrine', cost: 10, description: 'Defence-first foreign policy. The Eastern Brigade gets a budget.', effects: [{ indicator: 'natoRelations', delta: 12 }, { indicator: 'militaryReadiness', delta: 10 }, { indicator: 'russiaRelations', delta: -10 }], factionBias: { natoBloc: 15, reformBloc: 4 } },
     },
   },
   {
@@ -76,11 +76,11 @@ export const PILLARS: PillarDef[] = [
     axisLeft: 'Protective Authoritarian',
     axisRight: 'Open Liberal',
     steps: {
-      [-2]: { position: -2, label: 'Security State', cost: 14, description: 'Surveillance, expanded police, restricted press. The constitutional court is busy.', effects: [{ indicator: 'borderSecurity', delta: 10 }, { indicator: 'cyberDefense', delta: 8 }, { indicator: 'mediaTrust', delta: -10 }, { indicator: 'socialCohesion', delta: -8 }], factionBias: { reformBloc: -12 } },
-      [-1]: { position: -1, label: 'Order First', cost: 6, description: 'Hard line on disorder, looser on civil rights.', effects: [{ indicator: 'borderSecurity', delta: 5 }, { indicator: 'mediaTrust', delta: -3 }], factionBias: { reformBloc: -5 } },
+      [-2]: { position: -2, label: 'Security State', cost: 10, description: 'Surveillance, expanded police, restricted press. The constitutional court is busy.', effects: [{ indicator: 'borderSecurity', delta: 10 }, { indicator: 'cyberDefense', delta: 8 }, { indicator: 'mediaTrust', delta: -10 }, { indicator: 'socialCohesion', delta: -8 }], factionBias: { reformBloc: -12 } },
+      [-1]: { position: -1, label: 'Order First', cost: 3, description: 'Hard line on disorder, looser on civil rights.', effects: [{ indicator: 'borderSecurity', delta: 5 }, { indicator: 'mediaTrust', delta: -3 }], factionBias: { reformBloc: -5 } },
       [0]: { position: 0, label: 'Balanced Liberty', cost: 0, description: 'Civil rights with normal-country exceptions.', effects: [] },
-      [1]: { position: 1, label: 'Open Society', cost: 6, description: 'Press freedom expanded; KNAB given teeth.', effects: [{ indicator: 'mediaTrust', delta: 6 }, { indicator: 'corruptionLevel', delta: -4 }], factionBias: { reformBloc: 6 } },
-      [2]: { position: 2, label: 'Full Liberal Constitutionalism', cost: 14, description: 'Judicial independence, transparent procurement, robust press. KNAB hires actual auditors.', effects: [{ indicator: 'mediaTrust', delta: 12 }, { indicator: 'corruptionLevel', delta: -10 }, { indicator: 'euStanding', delta: 6 }], factionBias: { reformBloc: 12 } },
+      [1]: { position: 1, label: 'Open Society', cost: 3, description: 'Press freedom expanded; KNAB given teeth.', effects: [{ indicator: 'mediaTrust', delta: 6 }, { indicator: 'corruptionLevel', delta: -4 }], factionBias: { reformBloc: 6 } },
+      [2]: { position: 2, label: 'Full Liberal Constitutionalism', cost: 10, description: 'Judicial independence, transparent procurement, robust press. KNAB hires actual auditors.', effects: [{ indicator: 'mediaTrust', delta: 12 }, { indicator: 'corruptionLevel', delta: -10 }, { indicator: 'euStanding', delta: 6 }], factionBias: { reformBloc: 12 } },
     },
   },
   {
@@ -90,11 +90,11 @@ export const PILLARS: PillarDef[] = [
     axisLeft: 'Industrial Growth',
     axisRight: 'Green Mandate',
     steps: {
-      [-2]: { position: -2, label: 'Growth First', cost: 12, description: 'Loosen environmental review for major projects. Brussels schedules a meeting.', effects: [{ indicator: 'gdpGrowth', delta: 0.6 }, { indicator: 'greenTransition', delta: -10 }, { indicator: 'euStanding', delta: -4 }], factionBias: { green: -15 } },
-      [-1]: { position: -1, label: 'Industry-Friendly', cost: 6, description: 'Tilt regulatory regime toward producers.', effects: [{ indicator: 'gdpGrowth', delta: 0.3 }, { indicator: 'greenTransition', delta: -4 }], factionBias: { green: -5, entrepreneurs: 4 } },
+      [-2]: { position: -2, label: 'Growth First', cost: 8, description: 'Loosen environmental review for major projects. Brussels schedules a meeting.', effects: [{ indicator: 'gdpGrowth', delta: 0.6 }, { indicator: 'greenTransition', delta: -10 }, { indicator: 'euStanding', delta: -4 }], factionBias: { green: -15 } },
+      [-1]: { position: -1, label: 'Industry-Friendly', cost: 3, description: 'Tilt regulatory regime toward producers.', effects: [{ indicator: 'gdpGrowth', delta: 0.3 }, { indicator: 'greenTransition', delta: -4 }], factionBias: { green: -5, entrepreneurs: 4 } },
       [0]: { position: 0, label: 'Balanced Pace', cost: 0, description: 'EU green targets met "broadly". Latvian compromise.', effects: [] },
-      [1]: { position: 1, label: 'Green Acceleration', cost: 6, description: 'Faster renewable deployment, stricter permitting.', effects: [{ indicator: 'greenTransition', delta: 6 }, { indicator: 'energyIndependence', delta: 4 }], factionBias: { green: 6 } },
-      [2]: { position: 2, label: 'Green Mandate', cost: 12, description: 'Carbon neutrality by 2040 is law. The wind turbines outnumber the storks.', effects: [{ indicator: 'greenTransition', delta: 12 }, { indicator: 'energyIndependence', delta: 8 }, { indicator: 'euStanding', delta: 4 }, { indicator: 'gdpGrowth', delta: -0.3 }], factionBias: { green: 15, entrepreneurs: -5 } },
+      [1]: { position: 1, label: 'Green Acceleration', cost: 3, description: 'Faster renewable deployment, stricter permitting.', effects: [{ indicator: 'greenTransition', delta: 6 }, { indicator: 'energyIndependence', delta: 4 }], factionBias: { green: 6 } },
+      [2]: { position: 2, label: 'Green Mandate', cost: 8, description: 'Carbon neutrality by 2040 is law. The wind turbines outnumber the storks.', effects: [{ indicator: 'greenTransition', delta: 12 }, { indicator: 'energyIndependence', delta: 8 }, { indicator: 'euStanding', delta: 4 }, { indicator: 'gdpGrowth', delta: -0.3 }], factionBias: { green: 15, entrepreneurs: -5 } },
     },
   },
 ];
@@ -108,7 +108,7 @@ export interface ConstitutionState {
 export function createInitialConstitution(): ConstitutionState {
   return {
     positions: { economic: 0, foreign: 0, civil: 0, environment: 0 },
-    politicalCapital: 4,
+    politicalCapital: 8,
   };
 }
 

@@ -71,6 +71,11 @@ export default function ConstitutionPanel({ state, onAdvance }: Props) {
                       <div className="text-[10px] font-semibold" style={{ color: '#1C1917' }}>{leftStep?.label ?? '—'}</div>
                       <div className="text-[9px]" style={{ color: '#78716C' }}>{leftStep?.description ?? leftCheck.reason}</div>
                       {leftStep && <div className="text-[9px] font-data mt-0.5" style={{ color: '#B8860B' }}>−{leftStep.cost} PC</div>}
+                      {leftStep && !leftCheck.ok && (
+                        <div className="text-[9px] font-semibold mt-0.5" style={{ color: '#9E3039' }}>
+                          Need {leftStep.cost - c.politicalCapital} more PC
+                        </div>
+                      )}
                     </button>
                     <button
                       onClick={() => rightCheck.ok && onAdvance(p.id, 1)}
@@ -87,6 +92,11 @@ export default function ConstitutionPanel({ state, onAdvance }: Props) {
                       <div className="text-[10px] font-semibold" style={{ color: '#1C1917' }}>{rightStep?.label ?? '—'}</div>
                       <div className="text-[9px]" style={{ color: '#78716C' }}>{rightStep?.description ?? rightCheck.reason}</div>
                       {rightStep && <div className="text-[9px] font-data mt-0.5" style={{ color: '#B8860B' }}>−{rightStep.cost} PC</div>}
+                      {rightStep && !rightCheck.ok && (
+                        <div className="text-[9px] font-semibold mt-0.5" style={{ color: '#9E3039' }}>
+                          Need {rightStep.cost - c.politicalCapital} more PC
+                        </div>
+                      )}
                     </button>
                   </div>
                 );
