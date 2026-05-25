@@ -40,19 +40,25 @@ export default function DecreesPanel({ state, onEnact, onRevoke }: Props) {
                     <div className="text-[9px]" style={{ color: '#78716C' }}>active</div>
                   </div>
                 </div>
-                <button
-                  onClick={() => canRevoke && onRevoke(did)}
-                  disabled={!canRevoke}
-                  className="text-[10px] px-2 py-0.5 rounded font-medium"
-                  style={{
-                    background: canRevoke ? '#9E3039' : 'rgba(28,25,23,0.05)',
-                    color: canRevoke ? '#FFFFFF' : '#78716C',
-                    cursor: canRevoke ? 'pointer' : 'not-allowed',
-                  }}
-                  title={canRevoke ? '' : `Needs ${d.revokeCost} PC`}
-                >
-                  Revoke −{d.revokeCost}PC
-                </button>
+                <div className="flex flex-col items-end gap-0.5">
+                  <button
+                    onClick={() => canRevoke && onRevoke(did)}
+                    disabled={!canRevoke}
+                    className="text-[10px] px-2 py-0.5 rounded font-medium"
+                    style={{
+                      background: canRevoke ? '#9E3039' : 'rgba(28,25,23,0.05)',
+                      color: canRevoke ? '#FFFFFF' : '#78716C',
+                      cursor: canRevoke ? 'pointer' : 'not-allowed',
+                    }}
+                  >
+                    Revoke −{d.revokeCost}PC
+                  </button>
+                  {!canRevoke && (
+                    <span className="text-[9px]" style={{ color: '#9E3039' }}>
+                      Need {d.revokeCost - pc} more PC
+                    </span>
+                  )}
+                </div>
               </div>
             );
           })}
