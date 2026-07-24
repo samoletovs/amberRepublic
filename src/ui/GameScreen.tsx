@@ -249,6 +249,7 @@ export default function GameScreen({ state, events, decisions, onMakeChoice, onE
                 onCustomResponse={(text) => onCustomResponse(event.id, text)}
                 customResponseLoading={aiLoading}
                 turnSeed={state.turn}
+                currentIndicators={state.indicators}
               />
             ))}
           </div>
