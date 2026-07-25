@@ -4,6 +4,7 @@ import { getIndicatorMeta } from '../engine/indicators';
 import { magnitudeOf, delayLabelOf, magnitudeWeight } from '../engine/magnitudes';
 import { FACTIONS, reactionSymbol, type FactionId } from '../engine/factions';
 import AdvisorDebate from './AdvisorDebate';
+import ImpactBreakdown from './ImpactBreakdown';
 
 interface Props {
   event: GameEvent & { _model?: string };
@@ -16,6 +17,8 @@ interface Props {
   customResponseLoading?: boolean;
   /** Turn number — used to seed deterministic advisor lines. */
   turnSeed?: number;
+  /** Current indicator values — enables before/after impact bar visualization. */
+  currentIndicators?: Record<string, number>;
 }
 
 const CATEGORY_COLORS: Record<string, string> = {
@@ -30,8 +33,9 @@ const CATEGORY_COLORS: Record<string, string> = {
   petition: '#6366f1',
 };
 
-export default function EventCard({ event, index, selectedChoice, onChoose, onHoverChoice, aiMode, onCustomResponse, customResponseLoading, turnSeed = 0 }: Props) {
+export default function EventCard({ event, index, selectedChoice, onChoose, onHoverChoice, aiMode, onCustomResponse, customResponseLoading, turnSeed = 0, currentIndicators }: Props) {
   const [customText, setCustomText] = useState('');
+  const [expandedImpact, setExpandedImpact] = useState<number | null>(null);
   const catColor = CATEGORY_COLORS[event.category] || '#94a3b8';
 
   return (
@@ -164,7 +168,31 @@ export default function EventCard({ event, index, selectedChoice, onChoose, onHo
                         🔁 Echo expected
                       </span>
                     )}
+                    {/* Toggle impact breakdown */}
+                    {choice.effects.length > 0 && (
+                      <button
+                        onClick={e => {
+                          e.stopPropagation();
+                          setExpandedImpact(expandedImpact === ci ? null : ci);
+                        }}
+                        className="text-[10px] px-1.5 py-0.5 rounded inline-flex items-center gap-0.5 transition-all"
+                        style={{
+                          background: expandedImpact === ci ? 'rgba(158,48,57,0.1)' : 'rgba(28,25,23,0.05)',
+                          color: expandedImpact === ci ? '#9E3039' : '#78716C',
+                          border: `1px solid ${expandedImpact === ci ? 'rgba(158,48,57,0.2)' : 'rgba(28,25,23,0.08)'}`,
+                        }}
+                        title="Show detailed impact breakdown"
+                        aria-expanded={expandedImpact === ci}
+                      >
+                        📊 {expandedImpact === ci ? 'Hide' : 'Details'}
+                      </button>
+                    )}
                   </div>
+
+                  {/* Expanded impact breakdown */}
+                  {expandedImpact === ci && (
+                    <ImpactBreakdown effects={choice.effects} currentIndicators={currentIndicators} />
+                  )}
 
                   {/* Faction reactions — show leader initials + emotion symbol */}
                   {choice.factionReactions && Object.keys(choice.factionReactions).length > 0 && (
