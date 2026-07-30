@@ -63,6 +63,20 @@ export default function GameScreen({ state, events, decisions, onMakeChoice, onE
     return out;
   })();
 
+  // Compute preview indicator deltas for the currently-hovered choice — used by IndicatorPanel.
+  const previewDeltas: Record<string, number> = (() => {
+    if (!hoveredChoice) return {};
+    const ev = events.find(e => e.id === hoveredChoice.eventId);
+    if (!ev) return {};
+    const ch = ev.choices[hoveredChoice.choiceIndex];
+    if (!ch?.effects) return {};
+    const out: Record<string, number> = {};
+    for (const eff of ch.effects) {
+      out[eff.indicator] = (out[eff.indicator] ?? 0) + eff.delta;
+    }
+    return out;
+  })();
+
   return (
     <div className="min-h-screen p-2 sm:p-3 md:p-6 pb-24">
       {/* Header Bar */}
@@ -149,7 +163,7 @@ export default function GameScreen({ state, events, decisions, onMakeChoice, onE
       <div className="flex flex-col lg:flex-row gap-3 sm:gap-4">
         {/* Left: Indicators */}
         <aside className={`lg:w-80 shrink-0 ${showIndicators ? 'block' : 'hidden lg:block'}`}>
-          <IndicatorPanel state={state} />
+          <IndicatorPanel state={state} previewDeltas={Object.keys(previewDeltas).length > 0 ? previewDeltas : undefined} />
           <div className="mt-3">
             <RealityCheck state={state} />
           </div>
