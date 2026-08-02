@@ -1,8 +1,8 @@
 import { useState } from 'react';
-import type { HistoricalScenario } from '../engine/latviaData';
+import type { HistoricalScenario, HistoricalScenarioDecision } from '../engine/latviaData';
 
 interface Props {
-  onStart: (scenario?: HistoricalScenario) => void;
+  onStart: (scenario?: HistoricalScenario, decision?: HistoricalScenarioDecision) => void;
   onQuiz: () => void;
   onReality: () => void;
   scenarios: HistoricalScenario[];
@@ -10,6 +10,7 @@ interface Props {
 
 export default function TitleScreen({ onStart, onQuiz, onReality, scenarios }: Props) {
   const [showScenarios, setShowScenarios] = useState(false);
+  const [selectedScenarioId, setSelectedScenarioId] = useState<string | null>(null);
 
   const now = new Date();
   const currentYear = now.getFullYear();
@@ -111,19 +112,49 @@ export default function TitleScreen({ onStart, onQuiz, onReality, scenarios }: P
               </h3>
               <div className="space-y-2">
                 {scenarios.map(s => (
-                  <button
-                    key={s.id}
-                    onClick={() => onStart(s)}
+                  <div key={s.id} className="space-y-2">
+                    <button
+                    onClick={() => setSelectedScenarioId(prev => (prev === s.id ? null : s.id))}
                     className="w-full text-left p-3 rounded-lg transition-all duration-200 hover:shadow-sm"
                     style={{ background: 'rgba(28,25,23,0.03)', border: '1px solid rgba(28,25,23,0.06)' }}
-                    aria-label={`Start ${s.name} scenario`}
-                  >
+                    aria-label={`Open ${s.name} scenario details`}
+                    >
                     <div className="flex items-center gap-2 mb-1">
                       <span className="text-lg">{s.emoji}</span>
                       <span className="text-sm font-semibold" style={{ color: '#1C1917' }}>{s.year} — {s.name}</span>
                     </div>
                     <p className="text-xs leading-relaxed" style={{ color: '#78716C' }}>{s.challenge}</p>
-                  </button>
+                    <p className="text-[10px] mt-1" style={{ color: '#A8A29E' }}>
+                      {selectedScenarioId === s.id ? 'Choose a decision path ↓' : 'Tap to explore decisions'}
+                    </p>
+                    </button>
+                    {selectedScenarioId === s.id && (
+                    <div className="rounded-lg p-3 space-y-2" style={{ background: 'rgba(184,134,11,0.05)', border: '1px solid rgba(184,134,11,0.2)' }}>
+                      <p className="text-xs leading-relaxed" style={{ color: '#3D3731' }}>{s.description}</p>
+                      {s.decisions.map(decision => (
+                        <button
+                          key={decision.id}
+                          onClick={() => onStart(s, decision)}
+                          className="w-full text-left p-2.5 rounded-md transition-all duration-200 hover:shadow-sm"
+                          style={{ background: 'rgba(255,255,255,0.7)', border: '1px solid rgba(28,25,23,0.08)' }}
+                          aria-label={`Start ${s.name} with decision ${decision.title}`}
+                        >
+                          <p className="text-xs font-semibold" style={{ color: '#1C1917' }}>{decision.title}</p>
+                          <p className="text-[11px] mt-0.5" style={{ color: '#78716C' }}>{decision.description}</p>
+                          <p className="text-[10px] mt-1 italic" style={{ color: '#B8860B' }}>{decision.learningNote}</p>
+                        </button>
+                      ))}
+                      <button
+                        onClick={() => onStart(s)}
+                        className="w-full text-left p-2 rounded-md text-xs font-medium transition-all"
+                        style={{ background: 'rgba(158,48,57,0.08)', color: '#9E3039', border: '1px solid rgba(158,48,57,0.2)' }}
+                        aria-label={`Start ${s.name} with baseline conditions`}
+                      >
+                        Start without a preset decision
+                      </button>
+                    </div>
+                    )}
+                  </div>
                 ))}
               </div>
               <p className="text-[10px] mt-2 text-center" style={{ color: '#A8A29E' }}>

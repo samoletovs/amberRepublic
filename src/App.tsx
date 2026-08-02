@@ -12,7 +12,14 @@ import { enactDecree, revokeDecree } from './engine/decrees';
 import { ALL_EVENTS } from './data';
 import { generateAIEvent, evaluateCustomChoice, getAvailableModels, type AIModel } from './engine/ai';
 import { saveAiEvent, pickSavedEvent } from './engine/savedEvents';
-import { fetchDynamicStartData, fetchHistoricalData, type HistoricalScenario, HISTORICAL_SCENARIOS } from './engine/latviaData';
+import {
+  fetchDynamicStartData,
+  fetchHistoricalData,
+  applyHistoricalScenarioDecision,
+  type HistoricalScenario,
+  type HistoricalScenarioDecision,
+  HISTORICAL_SCENARIOS,
+} from './engine/latviaData';
 import TitleScreen from './ui/TitleScreen';
 import OnboardingScreen from './ui/OnboardingScreen';
 import ManifestoScreen from './ui/ManifestoScreen';
@@ -109,7 +116,7 @@ export default function App() {
     return { events: staticEvents, nextState };
   }, [aiMode, aiModels, selectedModel]);
 
-  const handleStartGame = useCallback(async (scenario?: HistoricalScenario) => {
+  const handleStartGame = useCallback(async (scenario?: HistoricalScenario, decision?: HistoricalScenarioDecision) => {
     let state = createInitialState();
 
     // Fetch real data to override starting conditions
@@ -126,6 +133,13 @@ export default function App() {
       }
     } catch {
       // Fall back to hardcoded values
+    }
+
+    if (decision) {
+      state = {
+        ...state,
+        indicators: applyHistoricalScenarioDecision(state.indicators, decision),
+      };
     }
 
     setPendingState(state);
