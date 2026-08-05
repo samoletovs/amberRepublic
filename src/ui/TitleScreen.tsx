@@ -4,11 +4,12 @@ import type { HistoricalScenario } from '../engine/latviaData';
 interface Props {
   onStart: (scenario?: HistoricalScenario) => void;
   onQuiz: () => void;
+  onTutorial: () => void;
   onReality: () => void;
   scenarios: HistoricalScenario[];
 }
 
-export default function TitleScreen({ onStart, onQuiz, onReality, scenarios }: Props) {
+export default function TitleScreen({ onStart, onQuiz, onTutorial, onReality, scenarios }: Props) {
   const [showScenarios, setShowScenarios] = useState(false);
 
   const now = new Date();
@@ -76,6 +77,14 @@ export default function TitleScreen({ onStart, onQuiz, onReality, scenarios }: P
         </button>
 
         <div className="flex flex-col sm:flex-row gap-2 justify-center mt-3">
+          <button
+            onClick={onTutorial}
+            className="px-6 py-2.5 rounded-lg text-sm font-medium transition-all duration-200"
+            style={{ background: 'rgba(184,134,11,0.1)', color: '#B8860B', border: '1px solid rgba(184,134,11,0.25)' }}
+            aria-label="Play with interactive tutorial"
+          >
+            🎓 Play the Tutorial
+          </button>
           <button
             onClick={onQuiz}
             className="px-6 py-2.5 rounded-lg text-sm font-medium transition-all duration-200"

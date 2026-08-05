@@ -12,6 +12,7 @@ import { enactDecree, revokeDecree } from './engine/decrees';
 import { ALL_EVENTS } from './data';
 import { generateAIEvent, evaluateCustomChoice, getAvailableModels, type AIModel } from './engine/ai';
 import { saveAiEvent, pickSavedEvent } from './engine/savedEvents';
+import { isTutorialCompleted, markTutorialCompleted } from './engine/tutorial';
 import { fetchDynamicStartData, fetchHistoricalData, type HistoricalScenario, HISTORICAL_SCENARIOS } from './engine/latviaData';
 import TitleScreen from './ui/TitleScreen';
 import OnboardingScreen from './ui/OnboardingScreen';
@@ -47,6 +48,7 @@ export default function App() {
   const [selectedModel, setSelectedModel] = useState<string | undefined>();
   const [aiLoading, setAiLoading] = useState(false);
   const [pendingState, setPendingState] = useState<GameState | null>(null);
+  const [showTutorial, setShowTutorial] = useState(false);
 
   // Wrap setScreen to also push browser history
   const setScreen = useCallback((next: Screen) => {
@@ -109,7 +111,8 @@ export default function App() {
     return { events: staticEvents, nextState };
   }, [aiMode, aiModels, selectedModel]);
 
-  const handleStartGame = useCallback(async (scenario?: HistoricalScenario) => {
+  const handleStartGame = useCallback(async (scenario?: HistoricalScenario, withTutorial?: boolean) => {
+    setShowTutorial(withTutorial ?? !isTutorialCompleted());
     let state = createInitialState();
 
     // Fetch real data to override starting conditions
@@ -279,8 +282,14 @@ export default function App() {
     setDecisions(new Map());
   }, [gameState, currentEvents, decisions, generateEvents]);
 
+  const handleCloseTutorial = useCallback(() => {
+    setShowTutorial(false);
+    markTutorialCompleted();
+  }, []);
+
   const handleRestart = useCallback(() => {
     setScreen('title');
+    setShowTutorial(false);
     setGameState(null);
     setCurrentEvents([]);
     setDecisions(new Map());
@@ -402,6 +411,7 @@ export default function App() {
         <TitleScreen
           onStart={handleStartGame}
           onQuiz={handleQuiz}
+          onTutorial={() => handleStartGame(undefined, true)}
           onReality={() => setScreen('reality')}
           scenarios={HISTORICAL_SCENARIOS}
         />
@@ -441,6 +451,8 @@ export default function App() {
           onSelectModel={setSelectedModel}
           onCustomResponse={handleCustomResponse}
           aiLoading={aiLoading}
+          showTutorial={showTutorial}
+          onCloseTutorial={handleCloseTutorial}
         />
       )}
       {screen === 'gameover' && gameState && (
