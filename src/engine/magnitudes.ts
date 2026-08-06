@@ -1,4 +1,5 @@
 import { INDICATORS } from './indicators';
+import type { Effect } from './types';
 
 /**
  * Reigns-style qualitative magnitude labels.
@@ -42,4 +43,23 @@ export function magnitudeWeight(m: Magnitude): number {
     case 'Major': return 3;
     case 'Severe': return 4;
   }
+}
+
+/**
+ * Computes a net impact score for a list of effects.
+ * Each effect contributes ±(magnitude weight) based on whether it moves the
+ * indicator in its "good" direction.  Neutral-direction indicators are excluded.
+ * Returns a signed integer — positive means the choice is net beneficial.
+ */
+export function choiceNetScore(effects: Effect[]): number {
+  let score = 0;
+  for (const eff of effects) {
+    const meta = INDICATORS.find(i => i.key === eff.indicator);
+    if (!meta || meta.goodDirection === 'neutral') continue;
+    const isGood = (meta.goodDirection === 'up' && eff.delta > 0) ||
+                   (meta.goodDirection === 'down' && eff.delta < 0);
+    const weight = magnitudeWeight(magnitudeOf(eff.indicator, eff.delta));
+    score += isGood ? weight : -weight;
+  }
+  return score;
 }
