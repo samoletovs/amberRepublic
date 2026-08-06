@@ -5,10 +5,11 @@ interface Props {
   onStart: (scenario?: HistoricalScenario) => void;
   onQuiz: () => void;
   onReality: () => void;
+  onWorkshop: () => void;
   scenarios: HistoricalScenario[];
 }
 
-export default function TitleScreen({ onStart, onQuiz, onReality, scenarios }: Props) {
+export default function TitleScreen({ onStart, onQuiz, onReality, onWorkshop, scenarios }: Props) {
   const [showScenarios, setShowScenarios] = useState(false);
 
   const now = new Date();
@@ -91,6 +92,14 @@ export default function TitleScreen({ onStart, onQuiz, onReality, scenarios }: P
             aria-label="View live Latvia data dashboard"
           >
             🇱🇻 Latvia Right Now
+          </button>
+          <button
+            onClick={onWorkshop}
+            className="px-6 py-2.5 rounded-lg text-sm font-medium transition-all duration-200"
+            style={{ background: 'rgba(184,134,11,0.08)', color: '#B8860B', border: '1px solid rgba(184,134,11,0.25)' }}
+            aria-label="Decision-Making Workshops"
+          >
+            🏛️ Policy Workshops
           </button>
           <button
             onClick={() => setShowScenarios(!showScenarios)}
