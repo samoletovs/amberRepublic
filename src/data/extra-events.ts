@@ -273,4 +273,84 @@ export const extraEvents: GameEvent[] = [
       ], humor: 'The consortium moves to Poland. Liepāja gets a new coffee shop instead.' },
     ],
   },
+  {
+    id: 'energy_price_shock',
+    title: '🔥 Baltic Energy Price Shock',
+    description: 'A severe winter and global LNG disruption push electricity and heating prices sharply upward across the Baltics. Households demand relief while businesses warn about shutdowns.',
+    preconditions: [{ indicator: 'inflation', op: '>', value: 4 }],
+    category: 'crisis', weight: 6, oneTime: false,
+    choices: [
+      { label: 'Emergency price caps and relief checks', description: 'Shield families from the shock with broad subsidies and temporary caps.', effects: [
+        { indicator: 'publicHappiness', delta: 4, delay: 0, duration: 3 },
+        { indicator: 'inflation', delta: -0.8, delay: 1, duration: 3 },
+        { indicator: 'publicDebt', delta: 2.5, delay: 0, duration: 0 },
+        { indicator: 'gdpGrowth', delta: -0.2, delay: 1, duration: 2 },
+      ], humor: 'Citizens praise the heating bill discount while the Finance Ministry quietly starts hyperventilating.' },
+      { label: 'Targeted support + efficiency retrofits', description: 'Aid low-income households and fund insulation upgrades to cut demand long-term.', effects: [
+        { indicator: 'publicHappiness', delta: 1, delay: 0, duration: 2 },
+        { indicator: 'inflation', delta: -0.5, delay: 2, duration: 4 },
+        { indicator: 'greenTransition', delta: 3, delay: 2, duration: 0 },
+        { indicator: 'publicDebt', delta: 1.2, delay: 0, duration: 0 },
+      ], humor: 'Riga apartment blocks suddenly discover insulation. Radiators finally stop warming the outdoors.' },
+      { label: 'No intervention — let prices normalize', description: 'Avoid major spending and trust market correction by spring.', effects: [
+        { indicator: 'publicDebt', delta: -0.6, delay: 0, duration: 0 },
+        { indicator: 'inflation', delta: 1.1, delay: 0, duration: 3 },
+        { indicator: 'publicHappiness', delta: -5, delay: 0, duration: 3 },
+        { indicator: 'gdpGrowth', delta: -0.4, delay: 1, duration: 2 },
+      ], humor: 'The market may be rational, but frozen voters are not.' },
+    ],
+  },
+  {
+    id: 'demographic_winter',
+    title: '👶 Demographic Winter Warning',
+    description: 'CSB publishes a stark projection: Latvia\'s working-age population could contract sharply by 2035 unless family formation and retention improve.',
+    preconditions: [{ indicator: 'birthRate', op: '<', value: 35 }],
+    category: 'society', weight: 7, oneTime: false,
+    choices: [
+      { label: 'Large family benefit package', description: 'Raise child allowances, extend parental leave, and subsidize early childcare.', effects: [
+        { indicator: 'birthRate', delta: 6, delay: 2, duration: 6 },
+        { indicator: 'publicHappiness', delta: 3, delay: 1, duration: 4 },
+        { indicator: 'publicDebt', delta: 1.8, delay: 0, duration: 0 },
+      ], humor: 'Baby stores run out of strollers. Economists run out of cautionary slides.' },
+      { label: 'Childcare and housing reform', description: 'Cut permit delays, expand municipal childcare, and prioritize young-family housing.', effects: [
+        { indicator: 'birthRate', delta: 4, delay: 3, duration: 6 },
+        { indicator: 'workforceSkill', delta: 2, delay: 3, duration: 0 },
+        { indicator: 'publicHappiness', delta: 1, delay: 1, duration: 3 },
+        { indicator: 'gdpGrowth', delta: 0.1, delay: 4, duration: 4 },
+      ], humor: 'Permits that once took a year now take months. Latvia calls this a bureaucratic miracle.' },
+      { label: 'Adapt with automation instead', description: 'Accept lower birth rates and accelerate automation + labor-saving tech.', effects: [
+        { indicator: 'techSector', delta: 4, delay: 2, duration: 0 },
+        { indicator: 'population', delta: -0.01, delay: 4, duration: 0 },
+        { indicator: 'unemployment', delta: 0.8, delay: 2, duration: 4 },
+        { indicator: 'publicHappiness', delta: -2, delay: 1, duration: 3 },
+      ], humor: 'Robots don\'t emigrate, but they also don\'t vote.' },
+    ],
+  },
+  {
+    id: 'diaspora_return_program',
+    title: '✈️ Bring the Diaspora Home?',
+    description: 'A coalition of municipalities proposes a national return program for Latvians abroad: relocation grants, credential recognition, and fast-track school placement.',
+    preconditions: [{ indicator: 'emigrationRate', op: '>', value: 45 }],
+    category: 'economy', weight: 6, oneTime: false,
+    choices: [
+      { label: 'Launch generous return grants', description: 'Cover relocation and first-year tax credits for returning families.', effects: [
+        { indicator: 'population', delta: 0.02, delay: 2, duration: 0 },
+        { indicator: 'emigrationRate', delta: -4, delay: 2, duration: 0 },
+        { indicator: 'workforceSkill', delta: 3, delay: 2, duration: 0 },
+        { indicator: 'publicDebt', delta: 1.6, delay: 0, duration: 0 },
+      ], humor: 'Ryanair to Riga is suddenly full of Latvian accents and oversized suitcases.' },
+      { label: 'Target critical professions only', description: 'Focus incentives on doctors, teachers, engineers, and cyber specialists.', effects: [
+        { indicator: 'population', delta: 0.01, delay: 2, duration: 0 },
+        { indicator: 'workforceSkill', delta: 5, delay: 2, duration: 0 },
+        { indicator: 'healthcareQuality', delta: 3, delay: 3, duration: 0 },
+        { indicator: 'publicDebt', delta: 0.9, delay: 0, duration: 0 },
+      ], humor: 'Latvia discovers that paperwork can move quickly when everyone agrees it should.' },
+      { label: 'Postpone — budget is too tight', description: 'Defer the program and reassess after next year\'s budget cycle.', effects: [
+        { indicator: 'publicDebt', delta: -0.4, delay: 0, duration: 0 },
+        { indicator: 'population', delta: -0.005, delay: 2, duration: 0 },
+        { indicator: 'emigrationRate', delta: 2, delay: 2, duration: 0 },
+        { indicator: 'publicHappiness', delta: -2, delay: 1, duration: 3 },
+      ], humor: 'The diaspora webinar ends with 240 unanswered questions and one very tired civil servant.' },
+    ],
+  },
 ];
