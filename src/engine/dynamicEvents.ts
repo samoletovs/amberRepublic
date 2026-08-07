@@ -25,7 +25,11 @@ export const DYNAMIC_EVENT_PREFIX = 'dyn_';
 interface DynamicBand {
   /** Suffix appended to the template id — must be unique within a template. */
   id: string;
-  /** Inclusive lower bound / exclusive upper bound on the real value. */
+  /**
+   * Inclusive lower bound / exclusive upper bound on the real value.
+   * Omitting a bound leaves that side open. Bands are evaluated in order and
+   * the first match wins, so overlapping ranges resolve to the earlier band.
+   */
   min?: number;
   max?: number;
   build: (ctx: BandContext) => Omit<GameEvent, 'id' | 'preconditions' | 'oneTime' | 'flavor'>;
@@ -256,6 +260,8 @@ const TEMPLATES: DynamicTemplate[] = [
         }),
       },
       {
+        // Zero net migration counts as inflow — the 'outflow' band above is
+        // strictly negative.
         id: 'inflow',
         min: 0,
         build: ({ display }) => ({
@@ -336,7 +342,10 @@ const TEMPLATES: DynamicTemplate[] = [
     format: (v) => `€${Math.round(v).toLocaleString('en-US')}`,
     bands: [
       {
+        // Any plausible published wage triggers this event; the guard only
+        // rejects nonsensical zero/negative readings.
         id: 'report',
+        min: 1,
         build: ({ display }) => ({
           title: '📊 Live Data: The Wage Question',
           description: `The average gross monthly salary now stands at ${display}. Unions call it proof of nothing; employers call it proof of everything.`,
