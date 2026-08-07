@@ -10,6 +10,7 @@ import { advancePillar, type PillarId } from './engine/constitution';
 import { resolveDemand } from './engine/superpowers';
 import { enactDecree, revokeDecree } from './engine/decrees';
 import { ALL_EVENTS } from './data';
+import { fetchDynamicEvents } from './engine/dynamicEvents';
 import { generateAIEvent, evaluateCustomChoice, getAvailableModels, type AIModel } from './engine/ai';
 import { saveAiEvent, pickSavedEvent } from './engine/savedEvents';
 import { isTutorialCompleted, markTutorialCompleted } from './engine/tutorial';
@@ -49,6 +50,7 @@ export default function App() {
   const [aiLoading, setAiLoading] = useState(false);
   const [pendingState, setPendingState] = useState<GameState | null>(null);
   const [showTutorial, setShowTutorial] = useState(false);
+  const [dynamicEvents, setDynamicEvents] = useState<GameEvent[]>([]);
 
   // Wrap setScreen to also push browser history
   const setScreen = useCallback((next: Screen) => {
@@ -82,7 +84,7 @@ export default function App() {
   }, []);
 
   const generateEvents = useCallback(async (state: GameState): Promise<{ events: GameEvent[]; nextState: GameState }> => {
-    const { state: nextState, events: staticEvents } = startTurn(state, ALL_EVENTS);
+    const { state: nextState, events: staticEvents } = startTurn(state, [...ALL_EVENTS, ...dynamicEvents]);
 
     if (!aiMode || aiModels.length === 0) {
       return { events: staticEvents, nextState };
@@ -109,11 +111,15 @@ export default function App() {
       setAiLoading(false);
     }
     return { events: staticEvents, nextState };
-  }, [aiMode, aiModels, selectedModel]);
+  }, [aiMode, aiModels, selectedModel, dynamicEvents]);
 
   const handleStartGame = useCallback(async (scenario?: HistoricalScenario, withTutorial?: boolean) => {
     setShowTutorial(withTutorial ?? !isTutorialCompleted());
     let state = createInitialState();
+
+    // Build events from live Latvia data — silently skipped if unavailable.
+    // Historical scenarios keep their period-accurate hand-written pool only.
+    setDynamicEvents(scenario ? [] : await fetchDynamicEvents());
 
     // Fetch real data to override starting conditions
     try {
@@ -291,6 +297,7 @@ export default function App() {
     setScreen('title');
     setShowTutorial(false);
     setGameState(null);
+    setDynamicEvents([]);
     setCurrentEvents([]);
     setDecisions(new Map());
   }, []);
