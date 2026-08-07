@@ -17,6 +17,7 @@ import CoalitionBar from './CoalitionBar';
 import RealityCheck from './RealityCheck';
 import NewsTicker from './NewsTicker';
 import PopulationPyramid from './PopulationPyramid';
+import TutorialOverlay from './TutorialOverlay';
 
 import { turnsUntilElection } from '../engine/turn';
 
@@ -37,11 +38,13 @@ interface Props {
   onSelectModel: (id: string) => void;
   onCustomResponse: (eventId: string, text: string) => void;
   aiLoading: boolean;
+  showTutorial: boolean;
+  onCloseTutorial: () => void;
 }
 
 const QUARTER_NAMES = ['Q1 Jan-Mar', 'Q2 Apr-Jun', 'Q3 Jul-Sep', 'Q4 Oct-Dec'];
 
-export default function GameScreen({ state, events, decisions, onMakeChoice, onEndTurn, onAdvancePillar, onResolveDemand, onEnactDecree, onRevokeDecree, aiMode, onToggleAI, aiModels, selectedModel, onSelectModel, onCustomResponse, aiLoading }: Props) {
+export default function GameScreen({ state, events, decisions, onMakeChoice, onEndTurn, onAdvancePillar, onResolveDemand, onEnactDecree, onRevokeDecree, aiMode, onToggleAI, aiModels, selectedModel, onSelectModel, onCustomResponse, aiLoading, showTutorial, onCloseTutorial }: Props) {
   const allDecisionsMade = events.every(e => decisions.has(e.id));
   const lastRecord = state.history[state.history.length - 1];
   const [showIndicators, setShowIndicators] = useState(false);
@@ -148,7 +151,7 @@ export default function GameScreen({ state, events, decisions, onMakeChoice, onE
 
       <div className="flex flex-col lg:flex-row gap-3 sm:gap-4">
         {/* Left: Indicators */}
-        <aside className={`lg:w-80 shrink-0 ${showIndicators ? 'block' : 'hidden lg:block'}`}>
+        <aside data-tutorial="indicators" className={`lg:w-80 shrink-0 ${showIndicators ? 'block' : 'hidden lg:block'}`}>
           <IndicatorPanel state={state} />
           <div className="mt-3">
             <RealityCheck state={state} />
@@ -161,8 +164,12 @@ export default function GameScreen({ state, events, decisions, onMakeChoice, onE
         {/* Center: Events & Decisions */}
         <main className="flex-1 space-y-3">
           {/* Coalition & Ratings */}
-          <CoalitionBar parliament={state.parliament} currentTurn={state.turn} />
-          <FactionPulse approval={state.factionApproval} preview={previewReactions} />
+          <div data-tutorial="coalition">
+            <CoalitionBar parliament={state.parliament} currentTurn={state.turn} />
+          </div>
+          <div data-tutorial="factions">
+            <FactionPulse approval={state.factionApproval} preview={previewReactions} />
+          </div>
           <SuperpowerPanel state={state} onResolve={onResolveDemand} />
           <ConstitutionPanel state={state} onAdvance={onAdvancePillar} />
           <DecreesPanel state={state} onEnact={onEnactDecree} onRevoke={onRevokeDecree} />
@@ -233,7 +240,7 @@ export default function GameScreen({ state, events, decisions, onMakeChoice, onE
           )}
 
           {/* Current events */}
-          <div>
+          <div data-tutorial="events">
             <h2 className="text-xl font-bold mb-3" style={{ color: '#1C1917' }}>
               🗓️ Decisions for {QUARTER_NAMES[state.quarter - 1]} {state.year}
             </h2>
@@ -263,6 +270,7 @@ export default function GameScreen({ state, events, decisions, onMakeChoice, onE
       <div className="fixed bottom-0 left-0 right-0 p-3 sm:p-4 backdrop-blur-md z-40 flex items-center justify-center gap-3" style={{ background: 'rgba(245,240,232,0.92)', borderTop: '1px solid rgba(28,25,23,0.08)' }}>
         <FeedbackButton />
         <button
+          data-tutorial="endturn"
           onClick={onEndTurn}
           disabled={!allDecisionsMade}
           className={`flex-1 max-w-md px-6 py-3 rounded-xl font-semibold text-base sm:text-lg transition-all duration-300 ${
@@ -280,6 +288,8 @@ export default function GameScreen({ state, events, decisions, onMakeChoice, onE
           {allDecisionsMade ? '⏭️ End Quarter' : `📋 ${events.length - decisions.size} left`}
         </button>
       </div>
+
+      {showTutorial && <TutorialOverlay onClose={onCloseTutorial} />}
     </div>
   );
 }
