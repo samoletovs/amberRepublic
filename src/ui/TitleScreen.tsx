@@ -1,20 +1,80 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import type { HistoricalScenario } from '../engine/latviaData';
+import { INDICATORS } from '../engine/indicators';
+import type { IndicatorMeta } from '../engine/types';
+import { createInitialState } from '../engine/state';
+import {
+  buildCustomScenarioUrl,
+  encodeCustomScenario,
+  type CustomScenario,
+} from '../engine/scenarioBuilder';
 
 interface Props {
   onStart: (scenario?: HistoricalScenario) => void;
+  onStartCustomScenario: (scenario: CustomScenario) => void;
   onQuiz: () => void;
   onTutorial: () => void;
   onReality: () => void;
   scenarios: HistoricalScenario[];
 }
 
-export default function TitleScreen({ onStart, onQuiz, onTutorial, onReality, scenarios }: Props) {
-  const [showScenarios, setShowScenarios] = useState(false);
+const BUILDER_INDICATORS = [
+  'gdpGrowth',
+  'unemployment',
+  'inflation',
+  'publicConfidence',
+  'healthcareQuality',
+  'corruptionLevel',
+  'natoRelations',
+  'socialCohesion',
+] as const;
 
+const indicatorMeta = BUILDER_INDICATORS
+  .map(key => INDICATORS.find(i => i.key === key))
+  .filter((meta): meta is IndicatorMeta => Boolean(meta));
+
+export default function TitleScreen({ onStart, onStartCustomScenario, onQuiz, onTutorial, onReality, scenarios }: Props) {
   const now = new Date();
   const currentYear = now.getFullYear();
   const currentQuarter = Math.floor(now.getMonth() / 3) + 1;
+  const defaultValues = useMemo(() => {
+    const initialStateIndicators = createInitialState().indicators;
+    return Object.fromEntries(
+      indicatorMeta.map(meta => {
+        const current = initialStateIndicators[meta.key];
+        const fallback = (meta.min + meta.max) / 2;
+        const value = typeof current === 'number' ? current : fallback;
+        return [meta.key, Number(Math.min(meta.max, Math.max(meta.min, value)).toFixed(1))];
+      })
+    );
+  }, []);
+
+  const [showScenarios, setShowScenarios] = useState(false);
+  const [showBuilder, setShowBuilder] = useState(false);
+  const [scenarioName, setScenarioName] = useState('Coalition Experiment');
+  const [scenarioYear, setScenarioYear] = useState(currentYear);
+  const [scenarioValues, setScenarioValues] = useState<Record<string, number>>(() => defaultValues);
+  const [copied, setCopied] = useState(false);
+
+  const indicatorOverrides = useMemo(() => Object.fromEntries(
+    Object.entries(scenarioValues)
+      .filter(([key, value]) => Math.abs(value - (defaultValues[key] ?? value)) > 0.05)
+  ), [scenarioValues, defaultValues]);
+
+  const customScenario: CustomScenario = {
+    name: scenarioName.trim() || 'Custom Scenario',
+    year: Math.round(scenarioYear),
+    indicatorOverrides,
+  };
+
+  const encodedScenario = encodeCustomScenario(customScenario);
+
+  const handleCopyShareLink = async () => {
+    if (!encodedScenario || !navigator.clipboard) return;
+    await navigator.clipboard.writeText(buildCustomScenarioUrl(encodedScenario));
+    setCopied(true);
+    window.setTimeout(() => setCopied(false), 2000);
+  };
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 sm:p-8">
@@ -109,6 +169,14 @@ export default function TitleScreen({ onStart, onQuiz, onTutorial, onReality, sc
           >
             ⏳ Historical Crisis Mode
           </button>
+          <button
+            onClick={() => setShowBuilder(!showBuilder)}
+            className="px-6 py-2.5 rounded-lg text-sm font-medium transition-all duration-200"
+            style={{ background: 'rgba(45,106,79,0.1)', color: '#2d6a4f', border: '1px solid rgba(45,106,79,0.25)' }}
+            aria-label="Open custom scenario builder"
+          >
+            🛠️ Interactive Scenario Builder
+          </button>
         </div>
 
         {/* Historical Scenarios */}
@@ -138,6 +206,87 @@ export default function TitleScreen({ onStart, onQuiz, onTutorial, onReality, sc
               <p className="text-[10px] mt-2 text-center" style={{ color: '#A8A29E' }}>
                 Starting conditions from real CSP data for the selected year
               </p>
+            </div>
+          </div>
+        )}
+
+        {showBuilder && (
+          <div className="mt-4 fade-in">
+            <div className="glass-card p-4 text-left">
+              <h3 className="text-xs font-semibold uppercase tracking-wider mb-3" style={{ color: '#2d6a4f' }}>
+                🛠️ Build your own scenario (real data baseline)
+              </h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-3">
+                <input
+                  value={scenarioName}
+                  onChange={e => setScenarioName(e.target.value)}
+                  className="px-3 py-2 rounded-md text-sm"
+                  style={{ background: 'rgba(28,25,23,0.03)', border: '1px solid rgba(28,25,23,0.08)', color: '#1C1917' }}
+                  placeholder="Scenario name"
+                  maxLength={80}
+                  aria-label="Custom scenario name"
+                />
+                <input
+                  type="number"
+                  value={scenarioYear}
+                  min={1991}
+                  max={2100}
+                  onChange={e => {
+                    const parsed = Number(e.target.value);
+                    if (!Number.isFinite(parsed)) {
+                      setScenarioYear(currentYear);
+                      return;
+                    }
+                    setScenarioYear(Math.max(1991, Math.min(2100, Math.round(parsed))));
+                  }}
+                  className="px-3 py-2 rounded-md text-sm"
+                  style={{ background: 'rgba(28,25,23,0.03)', border: '1px solid rgba(28,25,23,0.08)', color: '#1C1917' }}
+                  aria-label="Custom scenario year"
+                />
+              </div>
+
+              <div className="space-y-2 mb-4">
+                {indicatorMeta.map(meta => (
+                  <div key={meta.key}>
+                    <div className="flex items-center justify-between text-xs mb-1">
+                      <span style={{ color: '#3D3731' }}>{meta.emoji} {meta.name}</span>
+                      <span className="font-data" style={{ color: '#1C1917' }}>
+                      {scenarioValues[meta.key].toFixed(1)}
+                      </span>
+                    </div>
+                    <input
+                      type="range"
+                      min={meta.min}
+                      max={meta.max}
+                      step={(meta.max - meta.min) <= 5 ? 0.1 : 1}
+                      value={scenarioValues[meta.key]}
+                      onChange={e => setScenarioValues(prev => ({
+                        ...prev,
+                        [meta.key]: Number(e.target.value),
+                      }))}
+                      className="w-full"
+                      aria-label={`Scenario ${meta.name}`}
+                    />
+                  </div>
+                ))}
+              </div>
+
+              <div className="flex flex-col sm:flex-row gap-2">
+                <button
+                  onClick={() => onStartCustomScenario(customScenario)}
+                  className="px-4 py-2 rounded-lg text-sm font-medium"
+                  style={{ background: '#2d6a4f', color: '#FFFFFF' }}
+                >
+                  ▶️ Start this Scenario
+                </button>
+                <button
+                  onClick={handleCopyShareLink}
+                  className="px-4 py-2 rounded-lg text-sm font-medium"
+                  style={{ background: 'rgba(45,106,79,0.1)', color: '#2d6a4f', border: '1px solid rgba(45,106,79,0.25)' }}
+                >
+                  {copied ? '✅ Copied' : '🔗 Copy Share Link'}
+                </button>
+              </div>
             </div>
           </div>
         )}

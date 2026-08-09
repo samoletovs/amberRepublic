@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { GameState, GameEvent } from './engine/types';
 import { createInitialState } from './engine/state';
 import { startTurn, resolveTurn } from './engine/turn';
@@ -15,6 +15,7 @@ import { generateAIEvent, evaluateCustomChoice, getAvailableModels, type AIModel
 import { saveAiEvent, pickSavedEvent } from './engine/savedEvents';
 import { isTutorialCompleted, markTutorialCompleted } from './engine/tutorial';
 import { fetchDynamicStartData, fetchHistoricalData, type HistoricalScenario, HISTORICAL_SCENARIOS } from './engine/latviaData';
+import { decodeCustomScenario, type CustomScenario } from './engine/scenarioBuilder';
 import TitleScreen from './ui/TitleScreen';
 import OnboardingScreen from './ui/OnboardingScreen';
 import ManifestoScreen from './ui/ManifestoScreen';
@@ -26,6 +27,7 @@ import RealityDashboard from './ui/RealityDashboard';
 import ElectionResultsScreen from './ui/ElectionResultsScreen';
 
 type Screen = 'title' | 'onboarding' | 'manifesto' | 'game' | 'gameover' | 'quiz' | 'budget' | 'reality' | 'election';
+type StartScenario = HistoricalScenario | CustomScenario;
 
 // Screens that can be navigated to via URL hash
 const HASH_SCREENS: Record<string, Screen> = {
@@ -51,6 +53,11 @@ export default function App() {
   const [pendingState, setPendingState] = useState<GameState | null>(null);
   const [showTutorial, setShowTutorial] = useState(false);
   const [dynamicEvents, setDynamicEvents] = useState<GameEvent[]>([]);
+  const didApplySharedScenario = useRef(false);
+
+  const isHistoricalScenario = useCallback((scenario?: StartScenario): scenario is HistoricalScenario => {
+    return Boolean(scenario && 'challenge' in scenario);
+  }, []);
 
   // Wrap setScreen to also push browser history
   const setScreen = useCallback((next: Screen) => {
@@ -113,33 +120,64 @@ export default function App() {
     return { events: staticEvents, nextState };
   }, [aiMode, aiModels, selectedModel, dynamicEvents]);
 
-  const handleStartGame = useCallback(async (scenario?: HistoricalScenario, withTutorial?: boolean) => {
+  const handleStartGame = useCallback(async (scenario?: StartScenario, withTutorial?: boolean) => {
     setShowTutorial(withTutorial ?? !isTutorialCompleted());
     let state = createInitialState();
+    const isHistorical = isHistoricalScenario(scenario);
 
     // Build events from live Latvia data — silently skipped if unavailable.
     // Historical scenarios keep their period-accurate hand-written pool only.
-    setDynamicEvents(scenario ? [] : await fetchDynamicEvents());
+    setDynamicEvents(isHistorical ? [] : await fetchDynamicEvents());
 
     // Fetch real data to override starting conditions
     try {
-      const overrides = scenario
+      const baseOverrides = isHistorical && scenario
         ? await fetchHistoricalData(scenario.year)
         : await fetchDynamicStartData();
+      const customOverrides = !isHistorical && scenario ? scenario.indicatorOverrides : undefined;
       state = {
         ...state,
-        indicators: applyIndicatorOverrides(state.indicators, overrides),
+        indicators: applyIndicatorOverrides(state.indicators, { ...baseOverrides, ...customOverrides }),
       };
-      if (scenario) {
+      if (scenario?.year) {
         state = { ...state, year: scenario.year };
       }
     } catch {
       // Fall back to hardcoded values
+      if (!isHistorical && scenario) {
+        state = {
+          ...state,
+          indicators: applyIndicatorOverrides(state.indicators, scenario.indicatorOverrides),
+        };
+      }
+      if (scenario?.year) {
+        state = { ...state, year: scenario.year };
+      }
     }
 
     setPendingState(state);
     setScreen('onboarding');
-  }, []);
+  }, [isHistoricalScenario]);
+
+  useEffect(() => {
+    if (didApplySharedScenario.current) return;
+    if (screen !== 'title') return;
+    const encoded = new URLSearchParams(window.location.search).get('scenario');
+    if (!encoded) return;
+    const scenario = decodeCustomScenario(encoded);
+    if (!scenario) return;
+    didApplySharedScenario.current = true;
+    void handleStartGame(scenario).catch(() => {});
+    window.history.replaceState(null, '', window.location.pathname);
+  }, [screen, handleStartGame]);
+
+  const handleStartHistorical = useCallback((scenario?: HistoricalScenario) => {
+    void handleStartGame(scenario);
+  }, [handleStartGame]);
+
+  const handleStartCustom = useCallback((scenario: CustomScenario) => {
+    void handleStartGame(scenario);
+  }, [handleStartGame]);
 
   const handleTraitsConfirm = useCallback((traits: TraitId[]) => {
     const state = pendingState;
@@ -416,7 +454,8 @@ export default function App() {
     <div className="min-h-screen">
       {screen === 'title' && (
         <TitleScreen
-          onStart={handleStartGame}
+          onStart={handleStartHistorical}
+          onStartCustomScenario={handleStartCustom}
           onQuiz={handleQuiz}
           onTutorial={() => handleStartGame(undefined, true)}
           onReality={() => setScreen('reality')}
