@@ -31,6 +31,11 @@ export function delayLabelOf(delayTurns: number): DelayLabel {
   return 'Long-term';
 }
 
+/** Duration label for temporary effects; empty means no temporary duration. */
+export function durationLabelOf(durationTurns: number): string {
+  return durationTurns > 0 ? `for ${durationTurns}Q` : '';
+}
+
 /**
  * Colour tier for a magnitude — used by the UI to scale visual weight.
  * Slight = whisper, Severe = shout.

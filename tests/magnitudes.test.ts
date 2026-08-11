@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { magnitudeOf, delayLabelOf, magnitudeWeight } from '../src/engine/magnitudes';
+import { magnitudeOf, delayLabelOf, durationLabelOf, magnitudeWeight } from '../src/engine/magnitudes';
 
 describe('magnitudes — Reigns-style qualitative labels', () => {
   it('classifies small deltas as Slight', () => {
@@ -32,6 +32,11 @@ describe('magnitudes — Reigns-style qualitative labels', () => {
     expect(delayLabelOf(1)).toBe('Soon');
     expect(delayLabelOf(4)).toBe('Later');
     expect(delayLabelOf(8)).toBe('Long-term');
+  });
+
+  it('durationLabelOf only labels temporary effects', () => {
+    expect(durationLabelOf(0)).toBe('');
+    expect(durationLabelOf(3)).toBe('for 3Q');
   });
 
   it('magnitudeWeight returns ascending weights', () => {
