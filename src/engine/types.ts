@@ -74,6 +74,8 @@ export interface Choice {
   label: string;
   description: string;
   effects: Effect[];
+  /** Optional branch key used by multi-stage arc scenarios. */
+  branch?: string;
   humor?: string;
   /**
    * When true, the engine schedules a narrative "Echo" that surfaces 2-4 turns

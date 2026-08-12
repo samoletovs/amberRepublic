@@ -506,6 +506,7 @@ const ENERGY_PIVOT: ArcDef = {
           {
             label: 'Accelerate wind buildout in Kurzeme',
             description: 'Long lead time. Right answer. Voters in the meantime — patient or angry?',
+            branch: 'renewables',
             effects: [
               { indicator: 'greenTransition', delta: 6, delay: 2, duration: 0 },
               { indicator: 'energyIndependence', delta: 8, delay: 4, duration: 0 },
@@ -517,6 +518,7 @@ const ENERGY_PIVOT: ArcDef = {
           {
             label: 'Long-term LNG supply deal',
             description: 'Norwegian gas, locked in for a decade. Expensive. Predictable.',
+            branch: 'lng',
             effects: [
               { indicator: 'energyIndependence', delta: 5, delay: 1, duration: 0 },
               { indicator: 'greenTransition', delta: -3, delay: 1, duration: 0 },
@@ -531,24 +533,73 @@ const ENERGY_PIVOT: ArcDef = {
       number: 2,
       minDelay: 4,
       maxDelay: 8,
+      fromBranches: ['renewables'],
       build: () => ({
-        id: 'arc_energyPivot_2',
-        title: '🌬️ The Grid Holds',
-        description: 'A cold January. Demand spikes. The grid is tested. Engineers, exhausted, deliver a verdict.',
+        id: 'arc_energyPivot_2_renewables',
+        title: '🌬️ Wind Winter Stress Test',
+        description: 'A still, freezing week tests the new wind-heavy grid mix. Storage, imports and balancing tech all get their first political exam.',
         preconditions: [],
         category: 'crisis',
         weight: 100,
         oneTime: true,
         choices: [
           {
-            label: 'Praise the engineers publicly',
-            description: 'A speech. A medal. A quiet bonus.',
+            label: 'Fund emergency storage and balancing upgrades',
+            description: 'Double down: grid batteries, demand-response contracts, and rapid balancing upgrades.',
             effects: [
-              { indicator: 'publicConfidence', delta: 5, delay: 0, duration: 0 },
-              { indicator: 'mediaTrust', delta: 2, delay: 0, duration: 0 },
+              { indicator: 'publicDebt', delta: 1, delay: 0, duration: 0 },
+              { indicator: 'energyIndependence', delta: 4, delay: 2, duration: 0 },
+              { indicator: 'publicConfidence', delta: 4, delay: 1, duration: 0 },
             ],
             factionReactions: { green: 'cheer', reformBloc: 'cheer' },
-            humor: 'The engineers seem genuinely surprised to be on television.',
+            humor: 'An engineer explains frequency balancing on TV. It goes viral for reasons nobody fully understands.',
+          },
+          {
+            label: 'Issue temporary consumer subsidies',
+            description: 'Protect households now; postpone grid upgrades to next budget cycle.',
+            effects: [
+              { indicator: 'publicHappiness', delta: 3, delay: 0, duration: 2 },
+              { indicator: 'publicDebt', delta: 1.2, delay: 0, duration: 0 },
+              { indicator: 'energyIndependence', delta: -1, delay: 2, duration: 0 },
+            ],
+            factionReactions: { socialDems: 'cheer', green: 'frown' },
+          },
+        ],
+      }),
+    },
+    {
+      number: 2,
+      minDelay: 4,
+      maxDelay: 8,
+      fromBranches: ['lng'],
+      build: () => ({
+        id: 'arc_energyPivot_2_lng',
+        title: '⛴️ LNG Price Shock Reopener',
+        description: 'Global LNG spot prices spike after an Asian demand shock. Latvia\'s long-term contract suddenly looks less predictable than promised.',
+        preconditions: [],
+        category: 'crisis',
+        weight: 100,
+        oneTime: true,
+        choices: [
+          {
+            label: 'Renegotiate contract with volume flexibility',
+            description: 'Accept short-term uncertainty to cap long-run fiscal risk.',
+            effects: [
+              { indicator: 'energyIndependence', delta: 2, delay: 1, duration: 0 },
+              { indicator: 'publicDebt', delta: -0.8, delay: 2, duration: 0 },
+              { indicator: 'publicConfidence', delta: -1, delay: 0, duration: 1 },
+            ],
+            factionReactions: { entrepreneurs: 'frown', reformBloc: 'cheer' },
+          },
+          {
+            label: 'Absorb the costs and shield consumers',
+            description: 'Keep prices stable at home and carry the fiscal burden through the budget.',
+            effects: [
+              { indicator: 'publicHappiness', delta: 2, delay: 0, duration: 2 },
+              { indicator: 'publicDebt', delta: 1.5, delay: 0, duration: 0 },
+              { indicator: 'greenTransition', delta: -1, delay: 1, duration: 0 },
+            ],
+            factionReactions: { socialDems: 'cheer', entrepreneurs: 'meh' },
           },
         ],
       }),
@@ -588,7 +639,10 @@ export function nextArcEvent(active: ActiveArc, currentTurn: number, state: Game
   const arc = ARCS.find(a => a.id === active.arcId);
   if (!arc) return { event: null, readyArc: null };
   const nextStageNumber = active.stage + 1;
-  const stage = arc.stages.find(s => s.number === nextStageNumber);
+  const stage = arc.stages.find(s => (
+    s.number === nextStageNumber
+    && (!s.fromBranches?.length || (active.branch ? s.fromBranches.includes(active.branch) : false))
+  ));
   if (!stage) return { event: null, readyArc: null };
   const elapsed = currentTurn - active.turnStarted;
   if (elapsed < stage.minDelay) return { event: null, readyArc: null };

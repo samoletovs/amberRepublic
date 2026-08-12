@@ -111,11 +111,13 @@ export function resolveTurn(
     if (!arcDef) return a;
     const matched = decisions.find(d => d.event.id.startsWith(`arc_${a.arcId}_`));
     if (matched) {
+      const branch = matched.event.choices[matched.choiceIndex]?.branch;
       const newStage = a.stage + 1;
-      if (newStage >= arcDef.stages.length) {
+      const finalStageNumber = Math.max(...arcDef.stages.map(stageDef => stageDef.number));
+      if (newStage >= finalStageNumber) {
         completedArcs.add(a.arcId);
       }
-      return { ...a, stage: newStage };
+      return { ...a, stage: newStage, branch: branch ?? a.branch };
     }
     return a;
   }).filter(a => !completedArcs.has(a.arcId));
