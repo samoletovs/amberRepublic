@@ -3,6 +3,7 @@ import { GameEvent } from '../engine/types';
 import { getIndicatorMeta } from '../engine/indicators';
 import { magnitudeOf, delayLabelOf, magnitudeWeight } from '../engine/magnitudes';
 import { FACTIONS, reactionSymbol, type FactionId } from '../engine/factions';
+import type { ScenarioProgress } from '../engine/arcs';
 import AdvisorDebate from './AdvisorDebate';
 import ImpactBreakdown from './ImpactBreakdown';
 
@@ -19,6 +20,8 @@ interface Props {
   turnSeed?: number;
   /** Current indicator values — enables before/after impact bar visualization. */
   currentIndicators?: Record<string, number>;
+  /** Branching-scenario context when this event is a chapter of a storyline. */
+  scenario?: ScenarioProgress;
 }
 
 const CATEGORY_COLORS: Record<string, string> = {
@@ -33,7 +36,7 @@ const CATEGORY_COLORS: Record<string, string> = {
   petition: '#6366f1',
 };
 
-export default function EventCard({ event, index, selectedChoice, onChoose, onHoverChoice, aiMode, onCustomResponse, customResponseLoading, turnSeed = 0, currentIndicators }: Props) {
+export default function EventCard({ event, index, selectedChoice, onChoose, onHoverChoice, aiMode, onCustomResponse, customResponseLoading, turnSeed = 0, currentIndicators, scenario }: Props) {
   const [customText, setCustomText] = useState('');
   const [expandedImpact, setExpandedImpact] = useState<number | null>(null);
   const catColor = CATEGORY_COLORS[event.category] || '#94a3b8';
@@ -61,6 +64,15 @@ export default function EventCard({ event, index, selectedChoice, onChoose, onHo
                 ⚡ High Stakes
               </span>
             )}
+            {scenario && (
+              <span
+                className="text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full"
+                style={{ backgroundColor: 'rgba(158,48,57,0.12)', color: '#9E3039' }}
+                title={`${scenario.title} — chapter ${scenario.chapter} of ${scenario.totalChapters}. Your choice shapes later chapters.`}
+              >
+                🧭 Scenario {scenario.chapter}/{scenario.totalChapters}
+              </span>
+            )}
             {event._model && (
               <span className="text-[10px] px-1.5 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(184,134,11,0.12)', color: '#B8860B' }}>✨ {event._model}</span>
             )}
@@ -69,6 +81,12 @@ export default function EventCard({ event, index, selectedChoice, onChoose, onHo
         </div>
       </div>
 
+      {scenario && (
+        <p className="text-xs mb-2" style={{ color: '#78716C' }}>
+          <span style={{ color: '#9E3039' }}>{scenario.title}</span>
+          {scenario.branchLabel && <> · earlier path: <span style={{ color: '#B8860B' }}>{scenario.branchLabel}</span></>}
+        </p>
+      )}
       <p className="text-sm leading-relaxed mb-1" style={{ color: '#3D3731' }}>{event.description}</p>
       {event.flavor && (
         <p className="text-xs italic mb-4" style={{ color: '#78716C' }}>{event.flavor}</p>

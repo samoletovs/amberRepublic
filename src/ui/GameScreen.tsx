@@ -18,8 +18,10 @@ import RealityCheck from './RealityCheck';
 import NewsTicker from './NewsTicker';
 import PopulationPyramid from './PopulationPyramid';
 import TutorialOverlay from './TutorialOverlay';
+import ScenarioTracker from './ScenarioTracker';
 
 import { turnsUntilElection } from '../engine/turn';
+import { scenarioForEvent } from '../engine/arcs';
 
 interface Props {
   state: GameState;
@@ -170,6 +172,7 @@ export default function GameScreen({ state, events, decisions, onMakeChoice, onE
           <div data-tutorial="factions">
             <FactionPulse approval={state.factionApproval} preview={previewReactions} />
           </div>
+          <ScenarioTracker state={state} />
           <SuperpowerPanel state={state} onResolve={onResolveDemand} />
           <ConstitutionPanel state={state} onAdvance={onAdvancePillar} />
           <DecreesPanel state={state} onEnact={onEnactDecree} onRevoke={onRevokeDecree} />
@@ -257,6 +260,7 @@ export default function GameScreen({ state, events, decisions, onMakeChoice, onE
                 customResponseLoading={aiLoading}
                 turnSeed={state.turn}
                 currentIndicators={state.indicators}
+                scenario={scenarioForEvent(event.id, state.activeArcs ?? []) ?? undefined}
               />
             ))}
           </div>

@@ -648,3 +648,82 @@ export function nextArcEvent(active: ActiveArc, currentTurn: number, state: Game
   if (elapsed < stage.minDelay) return { event: null, readyArc: null };
   return { event: stage.build(state), readyArc: { ...active, stage: nextStageNumber } };
 }
+
+/** Human-readable names for branch keys used by branching scenarios. */
+const BRANCH_LABELS: Record<string, string> = {
+  renewables: 'Renewables first',
+  lng: 'Long-term LNG deal',
+};
+
+/** Label for a branch key, falling back to a capitalised version of the key. */
+export function branchLabel(branch: string): string {
+  return BRANCH_LABELS[branch] ?? branch.charAt(0).toUpperCase() + branch.slice(1);
+}
+
+/** Progress summary of a branching scenario, for display in the UI. */
+export interface ScenarioProgress {
+  arcId: ArcId;
+  title: string;
+  /** Chapter the player is currently facing (1-indexed). */
+  chapter: number;
+  /** Total chapters in this scenario. */
+  totalChapters: number;
+  /** Branch key chosen so far, if the scenario has branched. */
+  branch?: string;
+  /** Human-readable label for the chosen branch. */
+  branchLabel?: string;
+}
+
+function totalChaptersOf(arc: ArcDef): number {
+  return Math.max(...arc.stages.map(s => s.number));
+}
+
+/** Extract the arc id encoded in an arc-stage event id (`arc_<arcId>_<stage>`). */
+export function arcIdFromEventId(eventId: string): ArcId | null {
+  const arc = ARCS.find(a => eventId.startsWith(`arc_${a.id}_`));
+  return arc ? arc.id : null;
+}
+
+/**
+ * Progress summary for every scenario the player is currently living through.
+ * Pure function — derived from active arcs only.
+ */
+export function getScenarioProgress(active: ActiveArc[]): ScenarioProgress[] {
+  const out: ScenarioProgress[] = [];
+  for (const a of active) {
+    const arc = ARCS.find(x => x.id === a.arcId);
+    if (!arc) continue;
+    const totalChapters = totalChaptersOf(arc);
+    out.push({
+      arcId: arc.id,
+      title: arc.title,
+      chapter: Math.min(a.stage + 1, totalChapters),
+      totalChapters,
+      branch: a.branch,
+      branchLabel: a.branch ? branchLabel(a.branch) : undefined,
+    });
+  }
+  return out;
+}
+
+/** Scenario context for a specific event, or null if the event isn't part of a scenario. */
+export function scenarioForEvent(eventId: string, active: ActiveArc[]): ScenarioProgress | null {
+  const arcId = arcIdFromEventId(eventId);
+  if (!arcId) return null;
+  const arc = ARCS.find(a => a.id === arcId);
+  if (!arc) return null;
+  const activeArc = active.find(a => a.arcId === arcId);
+  const totalChapters = totalChaptersOf(arc);
+  const stageFromId = Number.parseInt(eventId.slice(`arc_${arcId}_`.length).split('_')[0], 10);
+  const chapter = Number.isFinite(stageFromId) && stageFromId > 0
+    ? Math.min(stageFromId, totalChapters)
+    : Math.min((activeArc?.stage ?? 0) + 1, totalChapters);
+  return {
+    arcId,
+    title: arc.title,
+    chapter,
+    totalChapters,
+    branch: activeArc?.branch,
+    branchLabel: activeArc?.branch ? branchLabel(activeArc.branch) : undefined,
+  };
+}
