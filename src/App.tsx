@@ -124,16 +124,18 @@ export default function App() {
     setShowTutorial(withTutorial ?? !isTutorialCompleted());
     let state = createInitialState();
     const isHistorical = isHistoricalScenario(scenario);
+    const scenarioYear = scenario?.year;
+    const baselineYear = !isHistorical && scenarioYear ? scenarioYear : undefined;
 
     // Build events from live Latvia data — silently skipped if unavailable.
     // Historical scenarios keep their period-accurate hand-written pool only.
-    setDynamicEvents(isHistorical ? [] : await fetchDynamicEvents());
+    setDynamicEvents(isHistorical ? [] : await fetchDynamicEvents(baselineYear));
 
     // Fetch real data to override starting conditions
     try {
       const baseOverrides = isHistorical && scenario
         ? await fetchHistoricalData(scenario.year)
-        : await fetchDynamicStartData();
+        : await fetchDynamicStartData(baselineYear);
       const customOverrides = !isHistorical && scenario ? scenario.indicatorOverrides : undefined;
       state = {
         ...state,

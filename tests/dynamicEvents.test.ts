@@ -101,6 +101,20 @@ describe('dynamicEvents', () => {
     expect(events[0].description).toContain('9.9%');
   });
 
+  it('should request year-specific stats when a year is provided', async () => {
+    const fetchMock = vi.fn(async () => ({
+      ok: true,
+      json: async () => ({ stats: { unemployment: stat('unemployment', 9.9, '2020') } }),
+    }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    await fetchDynamicEvents(2020);
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      '/api/latvia-stats?keys=unemployment,cpi,netMigration,births,avgSalary&year=2020'
+    );
+  });
+
   it('should return an empty list when the data source fails', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => {
       throw new Error('network down');

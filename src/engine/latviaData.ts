@@ -111,9 +111,9 @@ export async function fetchStats(keys: string[], year?: number): Promise<Record<
 }
 
 /** Fetch real data to overlay on initial game state */
-export async function fetchDynamicStartData(): Promise<Partial<Record<string, number>>> {
+export async function fetchDynamicStartData(year?: number): Promise<Partial<Record<string, number>>> {
   try {
-    const stats = await fetchStats(['population', 'unemployment', 'gdp', 'cpi', 'avgSalary']);
+    const stats = await fetchStats(['population', 'unemployment', 'gdp', 'cpi', 'avgSalary'], year);
     const overrides: Partial<Record<string, number>> = {};
 
     if (stats.population?.value) overrides.population = stats.population.value / 1_000_000;

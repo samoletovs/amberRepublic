@@ -435,9 +435,9 @@ export function isDynamicEvent(event: GameEvent): boolean {
  * Never throws — returns an empty list if the data source is unavailable so
  * the game always falls back to the hand-written event pool.
  */
-export async function fetchDynamicEvents(): Promise<GameEvent[]> {
+export async function fetchDynamicEvents(year?: number): Promise<GameEvent[]> {
   try {
-    const stats = await fetchStats([...DYNAMIC_STAT_KEYS]);
+    const stats = await fetchStats([...DYNAMIC_STAT_KEYS], year);
     return generateDynamicEvents(stats as Record<string, RealStat>);
   } catch {
     return [];
