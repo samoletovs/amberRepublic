@@ -25,8 +25,9 @@ import QuizScreen from './ui/QuizScreen';
 import BudgetScreen from './ui/BudgetScreen';
 import RealityDashboard from './ui/RealityDashboard';
 import ElectionResultsScreen from './ui/ElectionResultsScreen';
+import WorkshopScreen from './ui/WorkshopScreen';
 
-type Screen = 'title' | 'onboarding' | 'manifesto' | 'game' | 'gameover' | 'quiz' | 'budget' | 'reality' | 'election';
+type Screen = 'title' | 'onboarding' | 'manifesto' | 'game' | 'gameover' | 'quiz' | 'budget' | 'reality' | 'election' | 'workshop';
 type StartScenario = HistoricalScenario | CustomScenario;
 
 // Screens that can be navigated to via URL hash
@@ -35,6 +36,7 @@ const HASH_SCREENS: Record<string, Screen> = {
   '#reality': 'reality',
   '#game': 'game',
   '#onboarding': 'onboarding',
+  '#workshop': 'workshop',
 };
 
 function getScreenFromHash(): Screen {
@@ -452,6 +454,21 @@ export default function App() {
     setScreen('quiz');
   }, []);
 
+  const handleWorkshopApplyEffects = useCallback((effects: Array<{ indicator: string; delta: number }>) => {
+    setGameState(prev => {
+      if (!prev) return prev;
+      const newIndicators = { ...prev.indicators };
+      for (const { indicator, delta } of effects) {
+        const cur = newIndicators[indicator] ?? 0;
+        const meta = INDICATORS.find(i => i.key === indicator);
+        const min = meta?.min ?? 0;
+        const max = meta?.max ?? 100;
+        newIndicators[indicator] = Math.min(max, Math.max(min, cur + delta));
+      }
+      return { ...prev, indicators: newIndicators };
+    });
+  }, []);
+
   return (
     <div className="min-h-screen">
       {screen === 'title' && (
@@ -461,10 +478,18 @@ export default function App() {
           onQuiz={handleQuiz}
           onTutorial={() => handleStartGame(undefined, true)}
           onReality={() => setScreen('reality')}
+          onWorkshop={() => setScreen('workshop')}
           scenarios={HISTORICAL_SCENARIOS}
         />
       )}
       {screen === 'quiz' && <QuizScreen onBack={handleRestart} />}
+      {screen === 'workshop' && (
+        <WorkshopScreen
+          onBack={() => setScreen(gameState ? 'game' : 'title')}
+          indicators={gameState?.indicators}
+          onApplyEffects={gameState ? handleWorkshopApplyEffects : undefined}
+        />
+      )}
       {screen === 'onboarding' && (
         <OnboardingScreen
           onConfirm={handleTraitsConfirm}
@@ -501,6 +526,7 @@ export default function App() {
           aiLoading={aiLoading}
           showTutorial={showTutorial}
           onCloseTutorial={handleCloseTutorial}
+          onWorkshop={() => setScreen('workshop')}
         />
       )}
       {screen === 'gameover' && gameState && (

@@ -15,6 +15,7 @@ interface Props {
   onQuiz: () => void;
   onTutorial: () => void;
   onReality: () => void;
+  onWorkshop: () => void;
   scenarios: HistoricalScenario[];
 }
 
@@ -33,7 +34,7 @@ const indicatorMeta = BUILDER_INDICATORS
   .map(key => INDICATORS.find(i => i.key === key))
   .filter((meta): meta is IndicatorMeta => Boolean(meta));
 
-export default function TitleScreen({ onStart, onStartCustomScenario, onQuiz, onTutorial, onReality, scenarios }: Props) {
+export default function TitleScreen({ onStart, onStartCustomScenario, onQuiz, onTutorial, onReality, onWorkshop, scenarios }: Props) {
   const now = new Date();
   const currentYear = now.getFullYear();
   const currentQuarter = Math.floor(now.getMonth() / 3) + 1;
@@ -160,6 +161,14 @@ export default function TitleScreen({ onStart, onStartCustomScenario, onQuiz, on
             aria-label="View live Latvia data dashboard"
           >
             🇱🇻 Latvia Right Now
+          </button>
+          <button
+            onClick={onWorkshop}
+            className="px-6 py-2.5 rounded-lg text-sm font-medium transition-all duration-200"
+            style={{ background: 'rgba(184,134,11,0.08)', color: '#B8860B', border: '1px solid rgba(184,134,11,0.25)' }}
+            aria-label="Decision-Making Workshops"
+          >
+            🏛️ Policy Workshops
           </button>
           <button
             onClick={() => setShowScenarios(!showScenarios)}

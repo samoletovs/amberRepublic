@@ -42,11 +42,12 @@ interface Props {
   aiLoading: boolean;
   showTutorial: boolean;
   onCloseTutorial: () => void;
+  onWorkshop: () => void;
 }
 
 const QUARTER_NAMES = ['Q1 Jan-Mar', 'Q2 Apr-Jun', 'Q3 Jul-Sep', 'Q4 Oct-Dec'];
 
-export default function GameScreen({ state, events, decisions, onMakeChoice, onEndTurn, onAdvancePillar, onResolveDemand, onEnactDecree, onRevokeDecree, aiMode, onToggleAI, aiModels, selectedModel, onSelectModel, onCustomResponse, aiLoading, showTutorial, onCloseTutorial }: Props) {
+export default function GameScreen({ state, events, decisions, onMakeChoice, onEndTurn, onAdvancePillar, onResolveDemand, onEnactDecree, onRevokeDecree, aiMode, onToggleAI, aiModels, selectedModel, onSelectModel, onCustomResponse, aiLoading, showTutorial, onCloseTutorial, onWorkshop }: Props) {
   const allDecisionsMade = events.every(e => decisions.has(e.id));
   const lastRecord = state.history[state.history.length - 1];
   const [showIndicators, setShowIndicators] = useState(false);
@@ -273,6 +274,15 @@ export default function GameScreen({ state, events, decisions, onMakeChoice, onE
       {/* Fixed bottom bar on mobile */}
       <div className="fixed bottom-0 left-0 right-0 p-3 sm:p-4 backdrop-blur-md z-40 flex items-center justify-center gap-3" style={{ background: 'rgba(245,240,232,0.92)', borderTop: '1px solid rgba(28,25,23,0.08)' }}>
         <FeedbackButton />
+        <button
+          onClick={onWorkshop}
+          className="px-3 py-3 rounded-xl text-xs font-medium transition-all shrink-0"
+          style={{ background: 'rgba(184,134,11,0.1)', color: '#B8860B', border: '1px solid rgba(184,134,11,0.2)' }}
+          aria-label="Open Policy Workshops"
+          title="Policy Workshops"
+        >
+          🏛️
+        </button>
         <button
           data-tutorial="endturn"
           onClick={onEndTurn}
