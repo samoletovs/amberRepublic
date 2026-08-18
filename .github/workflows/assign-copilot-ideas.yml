@@ -24,8 +24,16 @@ name: "Assign Copilot to approved idea issues"
 # the run. A broken pipeline must look broken.
 
 on:
-  schedule:
-    - cron: '35 7 */2 * *'   # every second day — each assignment starts a 10-30 min Copilot agent run
+  # No schedule. amberRepublic is `status: complete` in the workspace manifest, and a
+  # completed project should not be commissioning new work: every assignment starts a
+  # 10-30 minute Copilot agent run, whose PR then triggers CI, auto-label, triage and
+  # auto-merge. That cascade ran 191 times here this month - 545 billable Actions
+  # minutes, 11.7% of the whole fleet's bill - on a project nobody is asking to change,
+  # against an allowance already 243% spent. Running out stops every workflow on the
+  # account, including the ones that recover it.
+  #
+  # Kept as workflow_dispatch so the loop can still be run by hand if amberRepublic is
+  # ever reopened; restore the cron (`35 7 */2 * *`) at the same time if so.
   workflow_dispatch:
 
 permissions:
