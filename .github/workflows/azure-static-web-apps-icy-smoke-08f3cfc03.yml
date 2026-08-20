@@ -56,6 +56,7 @@ jobs:
       (github.event_name == 'pull_request' &&
        github.event.action != 'closed' &&
        github.event.pull_request.head.repo.full_name == github.repository)
+      && github.actor != 'dependabot[bot]'
     runs-on: ubuntu-latest
     name: Build and Deploy Job
     steps:
@@ -127,6 +128,7 @@ jobs:
       github.event_name == 'pull_request' &&
       github.event.action == 'closed' &&
       github.event.pull_request.head.repo.full_name == github.repository
+      && github.actor != 'dependabot[bot]'
     runs-on: ubuntu-latest
     name: Close Pull Request Job
     steps:
