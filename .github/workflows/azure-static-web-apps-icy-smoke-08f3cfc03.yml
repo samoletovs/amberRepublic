@@ -47,7 +47,15 @@ jobs:
   # ── Build & Deploy ─────────────────────────────────────────────────
   build_and_deploy_job:
     needs: quality
-    if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.action != 'closed')
+    # Fork PRs get a read-only token and no secrets, so the SWA token is empty for
+    # them and this job can only fail. `quality` above needs no secrets and still
+    # runs, which is the signal an external contributor actually wants; deploying
+    # their branch is not something we could do anyway.
+    if: >-
+      github.event_name == 'push' ||
+      (github.event_name == 'pull_request' &&
+       github.event.action != 'closed' &&
+       github.event.pull_request.head.repo.full_name == github.repository)
     runs-on: ubuntu-latest
     name: Build and Deploy Job
     steps:
@@ -62,7 +70,6 @@ jobs:
           azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_ICY_SMOKE_08F3CFC03 }}
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           action: "upload"
-          skip_deploy_on_missing_secrets: true
           app_location: "/"
           api_location: "api"
           output_location: "dist"
@@ -112,7 +119,12 @@ jobs:
             || echo "::warning::Landing page sync dispatch failed"
 
   close_pull_request_job:
-    if: github.event_name == 'pull_request' && github.event.action == 'closed'
+    # Same fork guard as the deploy job: closing the staging environment needs the
+    # SWA token, which a fork PR never has.
+    if: >-
+      github.event_name == 'pull_request' &&
+      github.event.action == 'closed' &&
+      github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     name: Close Pull Request Job
     steps:
@@ -123,9 +135,3 @@ jobs:
           azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_ICY_SMOKE_08F3CFC03 }}
           app_location: "/"
           action: "close"
-          # Fork PRs get no secrets, so this token is empty for them and closing the
-          # staging environment fails. The build job already guards this; without the
-          # same guard here every external contributor's merged PR ends on a red X for
-          # a step that was never going to apply to them. Only reachable since the repo
-          # went public on 2026-08-20.
-          skip_deploy_on_missing_secrets: true
