@@ -123,3 +123,9 @@ jobs:
           azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_ICY_SMOKE_08F3CFC03 }}
           app_location: "/"
           action: "close"
+          # Fork PRs get no secrets, so this token is empty for them and closing the
+          # staging environment fails. The build job already guards this; without the
+          # same guard here every external contributor's merged PR ends on a red X for
+          # a step that was never going to apply to them. Only reachable since the repo
+          # went public on 2026-08-20.
+          skip_deploy_on_missing_secrets: true
