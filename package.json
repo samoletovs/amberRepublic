@@ -4,6 +4,9 @@
   "description": "",
   "main": "index.js",
   "type": "module",
+  "engines": {
+    "node": "^22.13.0 || ^24.0.0 || >=26.0.0"
+  },
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
@@ -26,7 +29,7 @@
   "author": "Sam",
   "license": "MIT",
   "dependencies": {
-    "framer-motion": "^13.1.1",
+    "framer-motion": "^13.2.0",
     "lucide-react": "^1.41.0",
     "react": "19.2.8",
     "react-dom": "19.2.8"
