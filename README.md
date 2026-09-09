@@ -6,6 +6,9 @@ You take the role of Latvia's leader, making decisions that shape the country's 
 
 ## 🎮 Play
 
+Use Node.js 22 (22.13.0 or later), matching CI and ESLint's minimum version.
+Vitest 5 no longer supports Node.js 20.
+
 ```bash
 npm install
 npm run dev
