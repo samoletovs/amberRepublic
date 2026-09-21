@@ -29,7 +29,7 @@
   "author": "Sam",
   "license": "MIT",
   "dependencies": {
-    "framer-motion": "^13.2.0",
+    "framer-motion": "^13.4.0",
     "lucide-react": "^1.47.0",
     "react": "19.3.0",
     "react-dom": "19.3.0"
