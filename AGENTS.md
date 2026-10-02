@@ -1,5 +1,9 @@
 # Amber Republic — Copilot Coding Agent Instructions
 
+Feedback triage uses `gpt-6-luna` on the existing personal-agents Azure account,
+with reasoning disabled and a 300-token output ceiling. The deterministic game
+engine and application generation are unchanged by this retirement migration.
+
 ## Project
 
 Political simulation game set in modern Latvia (2025-2035). React + TypeScript + Vite + Tailwind CSS.
