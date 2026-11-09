@@ -27,9 +27,7 @@ let dailyBudget = { date: '', costUsd: 0 };
 
 // Conservative USD per 1K output tokens (worst case so we overestimate cost).
 const COST_PER_1K_OUTPUT = {
-  'azure-gpt-4.1-nano': 0.0004,
-  'azure-gpt-4.1': 0.008,
-  'azure-o4-mini': 0.0044,
+  'azure-gpt-6-luna': 0.0005,
   'gpt-4.1-nano': 0.0004,
   'gpt-4.1-mini': 0.0016,
   'claude-haiku': 0.005,

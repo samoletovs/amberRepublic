@@ -10,24 +10,14 @@
  *   ANTHROPIC_API_KEY     - Anthropic API key (optional fallback)
  */
 
+const LUNA_DEPLOYMENT = 'gpt-6-luna';
+
 const MODELS = [
   {
-    id: 'azure-gpt-4.1-nano',
+    id: 'azure-gpt-6-luna',
     provider: 'azure-openai',
-    deployment: 'gpt-4.1-nano',
-    label: 'Azure GPT-4.1 Nano',
-  },
-  {
-    id: 'azure-gpt-4.1',
-    provider: 'azure-openai',
-    deployment: 'gpt-4.1',
-    label: 'Azure GPT-4.1',
-  },
-  {
-    id: 'azure-o4-mini',
-    provider: 'azure-openai',
-    deployment: 'o4-mini',
-    label: 'Azure o4-mini',
+    deployment: LUNA_DEPLOYMENT,
+    label: 'Azure GPT-6 Luna',
   },
   {
     id: 'gpt-4.1-nano',
@@ -64,7 +54,9 @@ async function callAzureOpenAI(systemPrompt, userPrompt, deployment, endpoint, a
       'api-key': apiKey,
     },
     body: JSON.stringify({
-      max_tokens: maxTokens,
+      max_completion_tokens: maxTokens,
+      // gpt-6-luna rejects sampling params unless reasoning is off; older deployments reject reasoning_effort.
+      ...(deployment === LUNA_DEPLOYMENT ? { reasoning_effort: 'none' } : {}),
       messages: [
         { role: 'system', content: systemPrompt },
         { role: 'user', content: userPrompt },

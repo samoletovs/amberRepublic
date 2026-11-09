@@ -71,6 +71,8 @@ Output ONLY a valid JSON array of event objects matching this structure:
   }
 ]`;
 
+const LUNA_DEPLOYMENT = 'gpt-6-luna';
+
 async function callAzureOpenAI(system, user, deployment, maxTokens) {
   const endpoint = process.env.AZURE_OPENAI_ENDPOINT;
   const key = process.env.AZURE_OPENAI_KEY;
@@ -81,8 +83,10 @@ async function callAzureOpenAI(system, user, deployment, maxTokens) {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'api-key': key },
     body: JSON.stringify({
-      max_tokens: maxTokens,
+      max_completion_tokens: maxTokens,
       temperature: 0.9,
+      // gpt-6-luna accepts temperature only with reasoning off; older deployments reject reasoning_effort.
+      ...(deployment === LUNA_DEPLOYMENT ? { reasoning_effort: 'none' } : {}),
       messages: [
         { role: 'system', content: system },
         { role: 'user', content: user },
@@ -143,8 +147,7 @@ async function callAnthropic(system, user, model, maxTokens) {
 }
 
 const MODELS = [
-  { call: (s, u, t) => callAzureOpenAI(s, u, 'gpt-4.1', t), label: 'Azure GPT-4.1' },
-  { call: (s, u, t) => callAzureOpenAI(s, u, 'gpt-4.1-nano', t), label: 'Azure GPT-4.1 Nano' },
+  { call: (s, u, t) => callAzureOpenAI(s, u, LUNA_DEPLOYMENT, t), label: 'Azure GPT-6 Luna' },
   { call: (s, u, t) => callOpenAI(s, u, 'gpt-4.1-mini', t), label: 'OpenAI GPT-4.1 Mini' },
   { call: (s, u, t) => callAnthropic(s, u, 'claude-haiku-4-20250514', t), label: 'Claude Haiku 4' },
 ];
